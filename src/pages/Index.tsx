@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Template, FormField } from '@/types';
 import ImageUpload from '@/components/ImageUpload';
@@ -40,7 +39,7 @@ const Index = () => {
   };
 
   const handleCreateTemplate = (imageUrl: string) => {
-    // Create a custom template from the uploaded image
+    // Create a custom template from the uploaded image with better section headers
     const customTemplate: Template = {
       id: 'custom-' + Date.now(),
       name: 'Custom Template',
@@ -48,18 +47,18 @@ const Index = () => {
       imageUrl: imageUrl,
       fields: [
         { id: 'title', label: 'Document Title', type: 'text', value: '', required: true },
-        { id: 'section1', label: 'Section 1', type: 'textarea', value: '' },
-        { id: 'section2', label: 'Section 2', type: 'textarea', value: '' },
-        { id: 'section3', label: 'Section 3', type: 'textarea', value: '' },
-        { id: 'section4', label: 'Section 4', type: 'textarea', value: '' },
+        { id: 'section1', label: 'Executive Summary', type: 'textarea', value: '' },
+        { id: 'section2', label: 'Key Findings', type: 'textarea', value: '' },
+        { id: 'section3', label: 'Recommendations', type: 'textarea', value: '' },
+        { id: 'section4', label: 'Next Steps', type: 'textarea', value: '' },
       ],
       layout: {
         sections: [
           { id: 'header', fieldIds: ['title'] },
-          { id: 'section1', title: 'Section 1', fieldIds: ['section1'] },
-          { id: 'section2', title: 'Section 2', fieldIds: ['section2'] },
-          { id: 'section3', title: 'Section 3', fieldIds: ['section3'] },
-          { id: 'section4', title: 'Section 4', fieldIds: ['section4'] },
+          { id: 'section1', title: 'Executive Summary', fieldIds: ['section1'] },
+          { id: 'section2', title: 'Key Findings', fieldIds: ['section2'] },
+          { id: 'section3', title: 'Recommendations', fieldIds: ['section3'] },
+          { id: 'section4', title: 'Next Steps', fieldIds: ['section4'] },
         ]
       }
     };
@@ -70,7 +69,7 @@ const Index = () => {
     
     toast({
       title: "Custom Template Created",
-      description: "Your template has been created from the uploaded image.",
+      description: "Your template has been created with the uploaded image. Fill in the sections and download when ready.",
       variant: "default",
     });
   };
