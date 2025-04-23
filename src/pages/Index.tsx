@@ -1,12 +1,136 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState } from 'react';
+import { Template, FormField } from '@/types';
+import ImageUpload from '@/components/ImageUpload';
+import TemplateSelector from '@/components/TemplateSelector';
+import FormBuilder from '@/components/FormBuilder';
+import TemplatePreview from '@/components/TemplatePreview';
+import { Button } from '@/components/ui/button';
+import { useToast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
+  const [step, setStep] = useState<number>(1);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [formFields, setFormFields] = useState<FormField[]>([]);
+  const { toast } = useToast();
+
+  const handleImageUploaded = (imageUrl: string) => {
+    setUploadedImageUrl(imageUrl);
+    toast({
+      title: "Image Uploaded",
+      description: "You can now create a template from this image.",
+    });
+  };
+
+  const handleSelectTemplate = (template: Template) => {
+    setSelectedTemplate(template);
+    setFormFields(template.fields);
+    setStep(2);
+  };
+
+  const handleCreateTemplate = (imageUrl: string) => {
+    // Create a custom template from the uploaded image
+    const customTemplate: Template = {
+      id: 'custom-' + Date.now(),
+      name: 'Custom Template',
+      type: 'custom',
+      imageUrl: imageUrl,
+      fields: [
+        { id: 'title', label: 'Document Title', type: 'text', value: '', required: true },
+        { id: 'section1', label: 'Section 1', type: 'textarea', value: '' },
+        { id: 'section2', label: 'Section 2', type: 'textarea', value: '' },
+        { id: 'section3', label: 'Section 3', type: 'textarea', value: '' },
+        { id: 'section4', label: 'Section 4', type: 'textarea', value: '' },
+      ],
+      layout: {
+        sections: [
+          { id: 'header', fieldIds: ['title'] },
+          { id: 'section1', title: 'Section 1', fieldIds: ['section1'] },
+          { id: 'section2', title: 'Section 2', fieldIds: ['section2'] },
+          { id: 'section3', title: 'Section 3', fieldIds: ['section3'] },
+          { id: 'section4', title: 'Section 4', fieldIds: ['section4'] },
+        ]
+      }
+    };
+    
+    setSelectedTemplate(customTemplate);
+    setFormFields(customTemplate.fields);
+    setStep(2);
+  };
+
+  const handleFormChange = (updatedFields: FormField[]) => {
+    setFormFields(updatedFields);
+  };
+
+  const renderStep = () => {
+    switch (step) {
+      case 1:
+        return (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Upload Template Image</h2>
+                <ImageUpload onImageUploaded={handleImageUploaded} />
+              </div>
+              <div className="flex flex-col">
+                <h2 className="text-xl font-semibold mb-4">Or Select a Template</h2>
+                <TemplateSelector 
+                  onSelectTemplate={handleSelectTemplate} 
+                  onCreateTemplate={handleCreateTemplate} 
+                  uploadedImageUrl={uploadedImageUrl || undefined} 
+                />
+              </div>
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <>
+            {selectedTemplate && (
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="md:w-1/2">
+                  <FormBuilder template={selectedTemplate} onChange={handleFormChange} />
+                </div>
+                <div className="md:w-1/2">
+                  <TemplatePreview template={selectedTemplate} fields={formFields} />
+                </div>
+              </div>
+            )}
+            <div className="mt-6 flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={() => setStep(1)}
+              >
+                Back to Templates
+              </Button>
+            </div>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold text-brand-600">Format Forge Visualizer</h1>
+          <p className="text-slate-600">Transform your documents with custom templates</p>
+        </div>
+      </header>
+      
+      <main className="container mx-auto px-4 py-8">
+        {renderStep()}
+      </main>
+      
+      <footer className="bg-slate-100 border-t mt-12">
+        <div className="container mx-auto px-4 py-6 text-center text-slate-500 text-sm">
+          Format Forge Visualizer &copy; 2025
+        </div>
+      </footer>
     </div>
   );
 };
