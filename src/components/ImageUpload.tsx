@@ -77,6 +77,15 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
     }
   };
 
+  const handleButtonClick = () => {
+    // Create a hidden file input and trigger it
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.onchange = (e) => handleFileChange(e as React.ChangeEvent<HTMLInputElement>);
+    fileInput.click();
+  };
+
   return (
     <Card className="w-full">
       <CardContent className="p-6">
@@ -126,17 +135,13 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
                     <p className="text-sm text-gray-500 mb-4">
                       or click to browse your files
                     </p>
-                    <label className="cursor-pointer">
-                      <Button variant="outline" className="border-brand-300">
-                        Upload image
-                      </Button>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileChange}
-                      />
-                    </label>
+                    <Button 
+                      variant="outline" 
+                      className="border-brand-300"
+                      onClick={handleButtonClick}
+                    >
+                      Upload image
+                    </Button>
                   </>
                 )}
               </div>

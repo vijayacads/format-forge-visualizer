@@ -7,6 +7,63 @@ import { Template } from '@/types';
 // Default templates
 const DEFAULT_TEMPLATES: Template[] = [
   {
+    id: 'cv-professional',
+    name: 'Professional CV',
+    type: 'cv',
+    imageUrl: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
+    fields: [
+      { id: 'name', label: 'Full Name', type: 'text', value: '', required: true },
+      { id: 'title', label: 'Professional Title', type: 'text', value: '' },
+      { id: 'email', label: 'Email', type: 'text', value: '', required: true },
+      { id: 'phone', label: 'Phone', type: 'text', value: '' },
+      { id: 'address', label: 'Address', type: 'text', value: '' },
+      { id: 'summary', label: 'Professional Summary', type: 'textarea', value: '' },
+      { id: 'experience', label: 'Work Experience', type: 'textarea', value: '' },
+      { id: 'education', label: 'Education', type: 'textarea', value: '' },
+      { id: 'skills', label: 'Skills', type: 'textarea', value: '' },
+      { id: 'certifications', label: 'Certifications', type: 'textarea', value: '' },
+    ],
+    layout: {
+      sections: [
+        { id: 'header', fieldIds: ['name', 'title', 'email', 'phone', 'address'] },
+        { id: 'summary', title: 'Professional Summary', fieldIds: ['summary'] },
+        { id: 'experience', title: 'Work Experience', fieldIds: ['experience'] },
+        { id: 'education', title: 'Education', fieldIds: ['education'] },
+        { id: 'skills', title: 'Skills', fieldIds: ['skills'] },
+        { id: 'certifications', title: 'Certifications', fieldIds: ['certifications'] },
+      ]
+    }
+  },
+  {
+    id: 'cv-creative',
+    name: 'Creative CV',
+    type: 'cv',
+    imageUrl: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7',
+    fields: [
+      { id: 'name', label: 'Full Name', type: 'text', value: '', required: true },
+      { id: 'title', label: 'Creative Role', type: 'text', value: '', required: true },
+      { id: 'email', label: 'Email', type: 'text', value: '' },
+      { id: 'portfolio', label: 'Portfolio URL', type: 'text', value: '' },
+      { id: 'bio', label: 'Professional Bio', type: 'textarea', value: '' },
+      { id: 'projects', label: 'Featured Projects', type: 'textarea', value: '' },
+      { id: 'experience', label: 'Work Experience', type: 'textarea', value: '' },
+      { id: 'education', label: 'Education', type: 'textarea', value: '' },
+      { id: 'skills', label: 'Skills & Expertise', type: 'textarea', value: '' },
+      { id: 'awards', label: 'Awards & Recognition', type: 'textarea', value: '' },
+    ],
+    layout: {
+      sections: [
+        { id: 'header', fieldIds: ['name', 'title', 'email', 'portfolio'] },
+        { id: 'bio', title: 'Professional Bio', fieldIds: ['bio'] },
+        { id: 'projects', title: 'Featured Projects', fieldIds: ['projects'] },
+        { id: 'experience', title: 'Work Experience', fieldIds: ['experience'] },
+        { id: 'skills', title: 'Skills & Expertise', fieldIds: ['skills'] },
+        { id: 'education', title: 'Education', fieldIds: ['education'] },
+        { id: 'awards', title: 'Awards & Recognition', fieldIds: ['awards'] },
+      ]
+    }
+  },
+  {
     id: 'cv-modern',
     name: 'Modern CV',
     type: 'cv',
