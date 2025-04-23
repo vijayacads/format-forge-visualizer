@@ -22,6 +22,15 @@ const Index = () => {
       title: "Image Uploaded",
       description: "You can now create a template from this image.",
     });
+    
+    // Automatically switch to the custom template tab in the TemplateSelector
+    const tabsContainer = document.querySelector('[role="tablist"]');
+    if (tabsContainer) {
+      const customTabTrigger = tabsContainer.querySelector('[value="custom"]');
+      if (customTabTrigger instanceof HTMLElement) {
+        customTabTrigger.click();
+      }
+    }
   };
 
   const handleSelectTemplate = (template: Template) => {
@@ -58,6 +67,12 @@ const Index = () => {
     setSelectedTemplate(customTemplate);
     setFormFields(customTemplate.fields);
     setStep(2);
+    
+    toast({
+      title: "Custom Template Created",
+      description: "Your template has been created from the uploaded image.",
+      variant: "default",
+    });
   };
 
   const handleFormChange = (updatedFields: FormField[]) => {

@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Template } from '@/types';
@@ -148,6 +147,12 @@ const TemplateSelector = ({
 }: TemplateSelectorProps) => {
   const [activeTab, setActiveTab] = useState<string>('builtin');
 
+  useEffect(() => {
+    if (uploadedImageUrl) {
+      setActiveTab('custom');
+    }
+  }, [uploadedImageUrl]);
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -195,12 +200,15 @@ const TemplateSelector = ({
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <button
+                <Button
                   className="mt-4 bg-brand-500 hover:bg-brand-600 text-white rounded-md px-4 py-2"
                   onClick={() => uploadedImageUrl && onCreateTemplate(uploadedImageUrl)}
                 >
                   Create Template From Image
-                </button>
+                </Button>
+                <p className="text-sm text-gray-500 mt-4">
+                  This will create a custom template based on your uploaded image.
+                </p>
               </div>
             )}
           </TabsContent>

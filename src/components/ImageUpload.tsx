@@ -82,7 +82,12 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
-    fileInput.onchange = (e) => handleFileChange(e as React.ChangeEvent<HTMLInputElement>);
+    fileInput.onchange = (e) => {
+      const inputEvent = e as unknown as React.ChangeEvent<HTMLInputElement>;
+      if (inputEvent.target.files && inputEvent.target.files[0]) {
+        processImage(inputEvent.target.files[0]);
+      }
+    };
     fileInput.click();
   };
 

@@ -4,6 +4,7 @@ import { FormField, Template } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Download } from 'lucide-react';
 
 interface TemplatePreviewProps {
   template: Template;
@@ -92,39 +93,50 @@ const TemplatePreview = ({ template, fields }: TemplatePreviewProps) => {
   };
 
   const renderCustomTemplate = () => {
-    // Basic generic template for custom uploads
+    // Enhanced template for custom uploads
     return (
       <div className="bg-white shadow p-6">
-        {template.imageUrl && (
-          <div className="mb-4 bg-gray-100 p-2 rounded-lg">
-            <img 
-              src={template.imageUrl} 
-              alt="Template" 
-              className="w-full h-auto max-h-48 object-contain opacity-25" 
-            />
-          </div>
-        )}
-        
         <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-1">
-            {fields[0]?.value || 'Your Document'}
+          <h1 className="text-2xl font-bold mb-3">
+            {getFieldValue('title') || 'Your Document'}
           </h1>
         </div>
+
+        {template.imageUrl && (
+          <div className="mb-6 bg-gray-50 p-3 rounded-lg border border-gray-100">
+            <div className="relative">
+              <img 
+                src={template.imageUrl} 
+                alt="Template" 
+                className="w-full h-auto max-h-64 object-contain opacity-25" 
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-sm text-gray-500 bg-white p-2 rounded shadow-sm">
+                  Image Template Reference
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         
         {template.layout.sections.map((section) => {
           if (section.id === 'header') return null;
           
           return (
-            <div key={section.id} className="mb-6">
-              <h3 className="text-lg font-semibold mb-2 text-brand-600">
+            <div key={section.id} className="mb-6 border-t pt-4">
+              <h3 className="text-lg font-semibold mb-3 text-brand-600">
                 {section.title}
               </h3>
-              <div>
+              <div className="bg-white p-3 rounded border border-gray-100">
                 {section.fieldIds.map(id => (
-                  <div key={id}>
-                    {getFieldValue(id).split('\n').map((line, i) => (
-                      <p key={i} className="mb-1">{line}</p>
-                    ))}
+                  <div key={id} className="mb-2">
+                    {getFieldValue(id) ? (
+                      getFieldValue(id).split('\n').map((line, i) => (
+                        <p key={i} className="mb-1">{line}</p>
+                      ))
+                    ) : (
+                      <p className="text-gray-400 italic">No content added yet</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -163,6 +175,7 @@ const TemplatePreview = ({ template, fields }: TemplatePreviewProps) => {
           onClick={handleDownload} 
           className="bg-brand-500 hover:bg-brand-600 text-white"
         >
+          <Download className="mr-2 h-4 w-4" />
           Download
         </Button>
       </CardFooter>
