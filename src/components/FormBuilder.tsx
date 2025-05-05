@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { FormField, Template } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,8 +14,8 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  List,
   ListOrdered,
-  ListUnordered,
   Text,
 } from "lucide-react";
 
@@ -175,7 +174,7 @@ const FormBuilder = ({
                   className="h-8 w-8 p-0"
                   title="Bullet List"
                 >
-                  <ListUnordered className="h-4 w-4" />
+                  <List className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
