@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Template } from '@/types';
-import { Save } from "lucide-react";
 
 // Default templates
 const DEFAULT_TEMPLATES: Template[] = [
@@ -141,14 +140,12 @@ interface TemplateSelectorProps {
   onSelectTemplate: (template: Template) => void;
   onCreateTemplate: (imageUrl: string) => void;
   uploadedImageUrl?: string;
-  userTemplates?: Template[];
 }
 
 const TemplateSelector = ({ 
   onSelectTemplate, 
   onCreateTemplate, 
-  uploadedImageUrl,
-  userTemplates = []
+  uploadedImageUrl 
 }: TemplateSelectorProps) => {
   const [activeTab, setActiveTab] = useState<string>('builtin');
 
@@ -158,8 +155,6 @@ const TemplateSelector = ({
     }
   }, [uploadedImageUrl]);
 
-  const hasUserTemplates = userTemplates && userTemplates.length > 0;
-
   return (
     <Card className="w-full">
       <CardHeader>
@@ -167,11 +162,8 @@ const TemplateSelector = ({
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="builtin">
-          <TabsList className={`grid w-full ${hasUserTemplates ? 'grid-cols-3' : 'grid-cols-2'} mb-6`}>
+          <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="builtin">Built-in Templates</TabsTrigger>
-            {hasUserTemplates && (
-              <TabsTrigger value="user">My Templates</TabsTrigger>
-            )}
             <TabsTrigger value="custom" disabled={!uploadedImageUrl}>
               Custom Template
             </TabsTrigger>
@@ -199,34 +191,6 @@ const TemplateSelector = ({
               ))}
             </div>
           </TabsContent>
-
-          {hasUserTemplates && (
-            <TabsContent value="user" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {userTemplates.map(template => (
-                  <Card 
-                    key={template.id}
-                    className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-brand-300" 
-                    onClick={() => onSelectTemplate(template)}
-                  >
-                    <CardContent className="p-4 flex flex-col items-center">
-                      <div className="w-full h-32 bg-gray-100 rounded mb-3 overflow-hidden">
-                        <img 
-                          src={template.imageUrl} 
-                          alt={template.name} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <h3 className="font-medium text-center">{template.name}</h3>
-                      <div className="mt-2 text-xs flex items-center text-gray-500">
-                        <Save className="h-3 w-3 mr-1" /> Saved template
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-          )}
           
           <TabsContent value="custom">
             {uploadedImageUrl && (

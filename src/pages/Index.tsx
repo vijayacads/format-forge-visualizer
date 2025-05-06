@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Template, FormField } from '@/types';
 import ImageUpload from '@/components/ImageUpload';
@@ -8,20 +7,12 @@ import TemplatePreview from '@/components/TemplatePreview';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 const Index = () => {
   const [step, setStep] = useState<number>(1);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [formFields, setFormFields] = useState<FormField[]>([]);
-  const [customPositions, setCustomPositions] = useState<boolean>(false);
-  const [textBoxPlacement, setTextBoxPlacement] = useState<{x: number, y: number, width: number, height: number}[]>([]);
-  const [saveTemplateDialog, setSaveTemplateDialog] = useState<boolean>(false);
-  const [newTemplateName, setNewTemplateName] = useState<string>("");
-  const [userTemplates, setUserTemplates] = useState<Template[]>([]);
   const { toast } = useToast();
 
   const handleImageUploaded = (imageUrl: string) => {
@@ -48,15 +39,6 @@ const Index = () => {
   };
 
   const handleCreateTemplate = (imageUrl: string) => {
-    // If custom positions are enabled, allow the user to place text boxes
-    if (customPositions) {
-      toast({
-        title: "Place your text boxes",
-        description: "Click and drag on the image to create text boxes for your template.",
-      });
-      return;
-    }
-
     // Create a custom template from the uploaded image with better section headers
     const customTemplate: Template = {
       id: 'custom-' + Date.now(),
@@ -96,36 +78,6 @@ const Index = () => {
     setFormFields(updatedFields);
   };
 
-  const handleSaveTemplate = () => {
-    if (!selectedTemplate || !newTemplateName.trim()) return;
-
-    const savedTemplate: Template = {
-      ...selectedTemplate,
-      id: `saved-${Date.now()}`,
-      name: newTemplateName,
-      fields: formFields,
-    };
-
-    setUserTemplates([...userTemplates, savedTemplate]);
-    setSaveTemplateDialog(false);
-    setNewTemplateName("");
-
-    toast({
-      title: "Template Saved",
-      description: `"${newTemplateName}" has been saved to your templates.`,
-    });
-  };
-
-  const toggleCustomPositions = () => {
-    setCustomPositions(!customPositions);
-    toast({
-      title: customPositions ? "Default Layout" : "Custom Layout",
-      description: customPositions 
-        ? "Using the default template layout." 
-        : "Now you can place text boxes where you want them.",
-    });
-  };
-
   const renderStep = () => {
     switch (step) {
       case 1:
@@ -137,29 +89,12 @@ const Index = () => {
                 <ImageUpload onImageUploaded={handleImageUploaded} />
               </div>
               <div className="flex flex-col">
-                <h2 className="text-xl font-semibold mb-4">Select a Template</h2>
+                <h2 className="text-xl font-semibold mb-4">Or Select a Template</h2>
                 <TemplateSelector 
                   onSelectTemplate={handleSelectTemplate} 
                   onCreateTemplate={handleCreateTemplate} 
-                  uploadedImageUrl={uploadedImageUrl || undefined}
-                  userTemplates={userTemplates} 
+                  uploadedImageUrl={uploadedImageUrl || undefined} 
                 />
-                {uploadedImageUrl && (
-                  <div className="mt-4">
-                    <Button 
-                      onClick={toggleCustomPositions}
-                      variant={customPositions ? "default" : "outline"}
-                      className="mb-2"
-                    >
-                      {customPositions ? "Use Default Layout" : "Custom Text Box Placement"}
-                    </Button>
-                    {customPositions && (
-                      <p className="text-sm text-slate-500">
-                        With custom placement, you'll be able to drag and create text regions on your template.
-                      </p>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -174,11 +109,6 @@ const Index = () => {
                 </div>
                 <div className="md:w-1/2">
                   <TemplatePreview template={selectedTemplate} fields={formFields} />
-                  <div className="mt-4 flex gap-2">
-                    <Button onClick={() => setSaveTemplateDialog(true)}>
-                      Save as Template
-                    </Button>
-                  </div>
                 </div>
               </div>
             )}
@@ -209,28 +139,6 @@ const Index = () => {
       <main className="container mx-auto px-4 py-8">
         {renderStep()}
       </main>
-      
-      <Dialog open={saveTemplateDialog} onOpenChange={setSaveTemplateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Save as Template</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="template-name">Template Name</Label>
-            <Input
-              id="template-name"
-              value={newTemplateName}
-              onChange={(e) => setNewTemplateName(e.target.value)}
-              placeholder="Enter a name for your template"
-              className="mt-2"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveTemplateDialog(false)}>Cancel</Button>
-            <Button onClick={handleSaveTemplate}>Save Template</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       
       <footer className="bg-slate-100 border-t mt-12">
         <div className="container mx-auto px-4 py-6 text-center text-slate-500 text-sm">
