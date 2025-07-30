@@ -54,9 +54,7 @@ const FormBuilder = ({
           </div>;
       default:
         return <div key={field.id} className="mb-4">
-            <Label htmlFor={field.id} className="mb-1 block">
-              {field.label} {field.required && <span className="text-red-500">*</span>}
-            </Label>
+            
             <Input id={field.id} type={field.type} value={field.value} onChange={e => handleFieldChange(field.id, e.target.value)} placeholder={field.placeholder} />
           </div>;
     }
