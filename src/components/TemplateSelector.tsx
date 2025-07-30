@@ -13,7 +13,7 @@ const DEFAULT_TEMPLATES: Template[] = [
     type: 'cv',
     imageUrl: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
     fields: [
-      { id: 'name', label: 'Full Name', type: 'text', value: '', required: true },
+      { id: 'name', label: 'Enter your Name', type: 'text', value: '', required: true },
       { id: 'title', label: 'Professional Title', type: 'text', value: '' },
       { id: 'email', label: 'Email', type: 'text', value: '', required: true },
       { id: 'phone', label: 'Phone', type: 'text', value: '' },
@@ -41,7 +41,7 @@ const DEFAULT_TEMPLATES: Template[] = [
     type: 'cv',
     imageUrl: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7',
     fields: [
-      { id: 'name', label: 'Full Name', type: 'text', value: '', required: true },
+      { id: 'name', label: 'Enter your Name', type: 'text', value: '', required: true },
       { id: 'title', label: 'Creative Role', type: 'text', value: '', required: true },
       { id: 'email', label: 'Email', type: 'text', value: '' },
       { id: 'portfolio', label: 'Portfolio URL', type: 'text', value: '' },
@@ -70,7 +70,7 @@ const DEFAULT_TEMPLATES: Template[] = [
     type: 'cv',
     imageUrl: '/placeholder.svg',
     fields: [
-      { id: 'name', label: 'Full Name', type: 'text', value: '', required: true },
+      { id: 'name', label: 'Enter your Name', type: 'text', value: '', required: true },
       { id: 'title', label: 'Professional Title', type: 'text', value: '' },
       { id: 'email', label: 'Email', type: 'text', value: '', required: true },
       { id: 'phone', label: 'Phone', type: 'text', value: '' },
@@ -95,7 +95,7 @@ const DEFAULT_TEMPLATES: Template[] = [
     type: 'resume',
     imageUrl: '/placeholder.svg',
     fields: [
-      { id: 'name', label: 'Name', type: 'text', value: '', required: true },
+      { id: 'name', label: 'Enter your Name', type: 'text', value: '', required: true },
       { id: 'contact', label: 'Contact Info', type: 'text', value: '', required: true },
       { id: 'objective', label: 'Objective', type: 'textarea', value: '' },
       { id: 'experience', label: 'Professional Experience', type: 'textarea', value: '' },
