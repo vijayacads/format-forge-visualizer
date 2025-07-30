@@ -28,12 +28,12 @@ const Index = () => {
       description: "You can now create a template from this image."
     });
 
-    // Automatically switch to the custom template tab in the TemplateSelector
+    // Automatically switch to the draft template tab in the TemplateSelector
     const tabsContainer = document.querySelector('[role="tablist"]');
     if (tabsContainer) {
-      const customTabTrigger = tabsContainer.querySelector('[value="custom"]');
-      if (customTabTrigger instanceof HTMLElement) {
-        customTabTrigger.click();
+      const draftTabTrigger = tabsContainer.querySelector('[value="draft"]');
+      if (draftTabTrigger instanceof HTMLElement) {
+        draftTabTrigger.click();
       }
     }
   };
@@ -152,7 +152,7 @@ const Index = () => {
                 </div>
               )}
               <div className="flex flex-col">
-                <h2 className="text-xl font-semibold mb-4">{isAdmin ? 'Or Select a Template' : 'Select a Template'}</h2>
+                <h2 className="text-xl font-semibold mb-4">{isAdmin ? 'Or Select from Live Templates' : 'Select from Live Templates'}</h2>
                 <TemplateSelector 
                   onSelectTemplate={handleSelectTemplate} 
                   onCreateTemplate={handleCreateTemplate} 

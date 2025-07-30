@@ -149,13 +149,13 @@ const TemplateSelector = ({
   uploadedImageUrl,
   isAdmin = false
 }: TemplateSelectorProps) => {
-  const [activeTab, setActiveTab] = useState<string>('builtin');
+  const [activeTab, setActiveTab] = useState<string>('live');
 
   useEffect(() => {
-    if (uploadedImageUrl) {
-      setActiveTab('custom');
+    if (uploadedImageUrl && isAdmin) {
+      setActiveTab('draft');
     }
-  }, [uploadedImageUrl]);
+  }, [uploadedImageUrl, isAdmin]);
 
   return (
     <Card className="w-full">
@@ -163,21 +163,21 @@ const TemplateSelector = ({
         <CardTitle className="text-xl">Choose a Template</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="builtin">
+        <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="live">
           {isAdmin ? (
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="builtin">Built-in Templates</TabsTrigger>
-              <TabsTrigger value="custom" disabled={!uploadedImageUrl}>
-                Custom Template
+              <TabsTrigger value="live">Live Templates</TabsTrigger>
+              <TabsTrigger value="draft" disabled={!uploadedImageUrl}>
+                Draft Templates
               </TabsTrigger>
             </TabsList>
           ) : (
             <div className="mb-6">
-              <h3 className="text-lg font-medium">Built-in Templates</h3>
+              <h3 className="text-lg font-medium">Live Templates</h3>
             </div>
           )}
           
-          <TabsContent value="builtin" className="space-y-4">
+          <TabsContent value="live" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {DEFAULT_TEMPLATES.map(template => (
                 <Card 
@@ -201,13 +201,13 @@ const TemplateSelector = ({
           </TabsContent>
           
           {isAdmin && (
-            <TabsContent value="custom">
+            <TabsContent value="draft">
               {uploadedImageUrl && (
                 <div className="flex flex-col items-center">
                   <div className="w-full max-w-md h-64 bg-gray-100 rounded mb-3 overflow-hidden">
                     <img 
                       src={uploadedImageUrl} 
-                      alt="Custom Template" 
+                      alt="Draft Template" 
                       className="w-full h-full object-contain"
                     />
                   </div>
@@ -215,10 +215,10 @@ const TemplateSelector = ({
                     className="mt-4 bg-brand-500 hover:bg-brand-600 text-white rounded-md px-4 py-2"
                     onClick={() => uploadedImageUrl && onCreateTemplate(uploadedImageUrl)}
                   >
-                    Create Template From Image
+                    Save as Live Template
                   </Button>
                   <p className="text-sm text-gray-500 mt-4">
-                    This will create a custom template based on your uploaded image.
+                    This draft template will be saved to Live Templates when you click save.
                   </p>
                 </div>
               )}
