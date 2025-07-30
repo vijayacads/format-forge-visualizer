@@ -55,7 +55,7 @@ const FormBuilder = ({
       default:
         return <div key={field.id} className="mb-4">
             
-            <Input id={field.id} type={field.type} value={field.value} onChange={e => handleFieldChange(field.id, e.target.value)} placeholder={field.placeholder} />
+            
           </div>;
     }
   };
