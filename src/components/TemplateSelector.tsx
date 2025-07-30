@@ -140,12 +140,14 @@ interface TemplateSelectorProps {
   onSelectTemplate: (template: Template) => void;
   onCreateTemplate: (imageUrl: string) => void;
   uploadedImageUrl?: string;
+  isAdmin?: boolean;
 }
 
 const TemplateSelector = ({ 
   onSelectTemplate, 
   onCreateTemplate, 
-  uploadedImageUrl 
+  uploadedImageUrl,
+  isAdmin = false
 }: TemplateSelectorProps) => {
   const [activeTab, setActiveTab] = useState<string>('builtin');
 
@@ -162,12 +164,18 @@ const TemplateSelector = ({
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="builtin">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="builtin">Built-in Templates</TabsTrigger>
-            <TabsTrigger value="custom" disabled={!uploadedImageUrl}>
-              Custom Template
-            </TabsTrigger>
-          </TabsList>
+          {isAdmin ? (
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="builtin">Built-in Templates</TabsTrigger>
+              <TabsTrigger value="custom" disabled={!uploadedImageUrl}>
+                Custom Template
+              </TabsTrigger>
+            </TabsList>
+          ) : (
+            <div className="mb-6">
+              <h3 className="text-lg font-medium">Built-in Templates</h3>
+            </div>
+          )}
           
           <TabsContent value="builtin" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -192,28 +200,30 @@ const TemplateSelector = ({
             </div>
           </TabsContent>
           
-          <TabsContent value="custom">
-            {uploadedImageUrl && (
-              <div className="flex flex-col items-center">
-                <div className="w-full max-w-md h-64 bg-gray-100 rounded mb-3 overflow-hidden">
-                  <img 
-                    src={uploadedImageUrl} 
-                    alt="Custom Template" 
-                    className="w-full h-full object-contain"
-                  />
+          {isAdmin && (
+            <TabsContent value="custom">
+              {uploadedImageUrl && (
+                <div className="flex flex-col items-center">
+                  <div className="w-full max-w-md h-64 bg-gray-100 rounded mb-3 overflow-hidden">
+                    <img 
+                      src={uploadedImageUrl} 
+                      alt="Custom Template" 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <Button
+                    className="mt-4 bg-brand-500 hover:bg-brand-600 text-white rounded-md px-4 py-2"
+                    onClick={() => uploadedImageUrl && onCreateTemplate(uploadedImageUrl)}
+                  >
+                    Create Template From Image
+                  </Button>
+                  <p className="text-sm text-gray-500 mt-4">
+                    This will create a custom template based on your uploaded image.
+                  </p>
                 </div>
-                <Button
-                  className="mt-4 bg-brand-500 hover:bg-brand-600 text-white rounded-md px-4 py-2"
-                  onClick={() => uploadedImageUrl && onCreateTemplate(uploadedImageUrl)}
-                >
-                  Create Template From Image
-                </Button>
-                <p className="text-sm text-gray-500 mt-4">
-                  This will create a custom template based on your uploaded image.
-                </p>
-              </div>
-            )}
-          </TabsContent>
+              )}
+            </TabsContent>
+          )}
         </Tabs>
       </CardContent>
     </Card>

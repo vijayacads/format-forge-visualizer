@@ -153,7 +153,12 @@ const Index = () => {
               )}
               <div className="flex flex-col">
                 <h2 className="text-xl font-semibold mb-4">{isAdmin ? 'Or Select a Template' : 'Select a Template'}</h2>
-                <TemplateSelector onSelectTemplate={handleSelectTemplate} onCreateTemplate={handleCreateTemplate} uploadedImageUrl={uploadedImageUrl || undefined} />
+                <TemplateSelector 
+                  onSelectTemplate={handleSelectTemplate} 
+                  onCreateTemplate={handleCreateTemplate} 
+                  uploadedImageUrl={uploadedImageUrl || undefined} 
+                  isAdmin={isAdmin}
+                />
               </div>
             </div>
           </div>;
