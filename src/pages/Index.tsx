@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Template, FormField } from '@/types';
 import ImageUpload from '@/components/ImageUpload';
 import TemplateSelector from '@/components/TemplateSelector';
@@ -6,7 +6,6 @@ import FormBuilder from '@/components/FormBuilder';
 import TemplatePreview from '@/components/TemplatePreview';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,30 +20,44 @@ const Index = () => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [adminPassword, setAdminPassword] = useState<string>('');
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState<boolean>(false);
+  const [savedTemplates, setSavedTemplates] = useState<Template[]>([]);
+  const [currentFieldPositions, setCurrentFieldPositions] = useState<{[key: string]: {x: number, y: number, width: number, height: number}}>({});
   const {
     toast
   } = useToast();
 
+  // Load saved templates from localStorage on component mount
+  useEffect(() => {
+    const saved = localStorage.getItem('savedTemplates');
+    if (saved) {
+      try {
+        setSavedTemplates(JSON.parse(saved));
+      } catch (error) {
+        console.error('Error loading saved templates:', error);
+        setSavedTemplates([]);
+      }
+    }
+  }, []);
+
+  // Save templates to localStorage whenever savedTemplates changes
+  useEffect(() => {
+    localStorage.setItem('savedTemplates', JSON.stringify(savedTemplates));
+  }, [savedTemplates]);
+
   const handleImageUploaded = (imageUrl: string) => {
     setUploadedImageUrl(imageUrl);
     toast({
-      title: "Image Uploaded",
-      description: "You can now create a template from this image."
+      title: "Image uploaded",
+      description: "Processing image with OCR to detect form fields..."
     });
-
-    // Automatically switch to the draft template tab in the TemplateSelector
-    const tabsContainer = document.querySelector('[role="tablist"]');
-    if (tabsContainer) {
-      const draftTabTrigger = tabsContainer.querySelector('[value="draft"]');
-      if (draftTabTrigger instanceof HTMLElement) {
-        draftTabTrigger.click();
-      }
-    }
   };
 
-  const handleFieldsDetected = (fields: DetectedField[]) => {
+  const handleFieldsDetected = (fields: DetectedField[], imageUrl: string) => {
     setDetectedFields(fields);
     console.log('Fields detected in Index:', fields);
+    
+    // Automatically create template and go to step 2 after OCR
+    handleCreateTemplate(imageUrl, fields);
   };
 
   const handleSelectTemplate = (template: Template) => {
@@ -53,7 +66,7 @@ const Index = () => {
     setStep(2);
   };
 
-  const handleCreateTemplate = (imageUrl: string) => {
+  const handleCreateTemplate = (imageUrl: string, detectedFields: DetectedField[]) => {
     // Create a custom template from the uploaded image with detected fields
     const customTemplate: Template = {
       id: 'custom-' + Date.now(),
@@ -157,6 +170,53 @@ const Index = () => {
     setFormFields(updatedFields);
   };
 
+  const handlePositionsChange = (positions: {[key: string]: {x: number, y: number, width: number, height: number}}) => {
+    setCurrentFieldPositions(positions);
+  };
+
+  const handleSaveTemplate = () => {
+    if (selectedTemplate && selectedTemplate.type === 'custom') {
+      // Create a new template with the current field positions and data
+      const savedTemplate: Template = {
+        ...selectedTemplate,
+        id: 'saved-' + Date.now(),
+        name: `Custom Template ${new Date().toLocaleDateString()}`,
+        fields: formFields.map(field => ({
+          ...field,
+          value: '' // Reset values for new instances
+        })),
+        type: 'custom',
+        fieldPositions: currentFieldPositions // Save the current positions
+      };
+      
+      // Save the template to state and localStorage
+      setSavedTemplates(prev => [...prev, savedTemplate]);
+      
+      toast({
+        title: "Template Saved",
+        description: "Your template has been saved to Live Templates.",
+        variant: "default",
+      });
+      
+      // Reset to step 1
+      setStep(1);
+      setSelectedTemplate(null);
+      setFormFields([]);
+      setDetectedFields([]);
+      setUploadedImageUrl(null);
+      setCurrentFieldPositions({});
+    }
+  };
+
+  const handleDeleteTemplate = (templateId: string) => {
+    setSavedTemplates(prev => prev.filter(template => template.id !== templateId));
+    toast({
+      title: "Template Deleted",
+      description: "The template has been removed from your saved templates.",
+      variant: "default",
+    });
+  };
+
   const handleAdminLogin = () => {
     if (adminPassword === 'Vigyan@Assignments123') {
       setIsAdmin(true);
@@ -201,12 +261,11 @@ const Index = () => {
                 </div>
               )}
               <div className="flex flex-col">
-                <h2 className="text-xl font-semibold mb-4">{isAdmin ? 'Or Select from Live Templates' : 'Select from Live Templates'}</h2>
+                <h2 className="text-xl font-semibold mb-4">Select from Live Templates</h2>
                 <TemplateSelector 
-                  onSelectTemplate={handleSelectTemplate} 
-                  onCreateTemplate={handleCreateTemplate} 
-                  uploadedImageUrl={uploadedImageUrl || undefined} 
-                  isAdmin={isAdmin}
+                  onSelectTemplate={handleSelectTemplate}
+                  savedTemplates={savedTemplates}
+                  onDeleteTemplate={handleDeleteTemplate}
                 />
               </div>
             </div>
@@ -218,7 +277,13 @@ const Index = () => {
                   <FormBuilder template={selectedTemplate} onChange={handleFormChange} />
                 </div>
                 <div className="md:w-1/2">
-                  <TemplatePreview template={selectedTemplate} fields={formFields} />
+                  <TemplatePreview 
+                    template={selectedTemplate} 
+                    fields={formFields} 
+                    onSaveTemplate={isAdmin && selectedTemplate.type === 'custom' ? handleSaveTemplate : undefined}
+                    isAdmin={isAdmin}
+                    onPositionsChange={handlePositionsChange}
+                  />
                 </div>
               </div>}
             <div className="mt-6 flex justify-between">

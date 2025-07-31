@@ -1,9 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { Template } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Template } from '@/types';
+import { Trash2 } from "lucide-react";
 
 // Default templates
 const DEFAULT_TEMPLATES: Template[] = [
@@ -139,46 +138,25 @@ const DEFAULT_TEMPLATES: Template[] = [
 
 interface TemplateSelectorProps {
   onSelectTemplate: (template: Template) => void;
-  onCreateTemplate: (imageUrl: string) => void;
-  uploadedImageUrl?: string;
-  isAdmin?: boolean;
+  savedTemplates?: Template[];
+  onDeleteTemplate?: (templateId: string) => void;
 }
 
 const TemplateSelector = ({ 
-  onSelectTemplate, 
-  onCreateTemplate, 
-  uploadedImageUrl,
-  isAdmin = false
+  onSelectTemplate,
+  savedTemplates = [],
+  onDeleteTemplate
 }: TemplateSelectorProps) => {
-  const [activeTab, setActiveTab] = useState<string>('live');
-
-  useEffect(() => {
-    if (uploadedImageUrl && isAdmin) {
-      setActiveTab('draft');
-    }
-  }, [uploadedImageUrl, isAdmin]);
-
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-xl">Choose a Template</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="live">
-          {isAdmin ? (
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="live">Live Templates</TabsTrigger>
-              <TabsTrigger value="draft" disabled={!uploadedImageUrl}>
-                Draft Templates
-              </TabsTrigger>
-            </TabsList>
-          ) : (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium">Live Templates</h3>
-            </div>
-          )}
-          
-          <TabsContent value="live" className="space-y-4">
+        <div className="space-y-8">
+          {/* Default Templates */}
+          <div>
+            <h3 className="text-lg font-medium mb-4">Default Templates</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {DEFAULT_TEMPLATES.map(template => (
                 <Card 
@@ -199,33 +177,49 @@ const TemplateSelector = ({
                 </Card>
               ))}
             </div>
-          </TabsContent>
-          
-          {isAdmin && (
-            <TabsContent value="draft">
-              {uploadedImageUrl && (
-                <div className="flex flex-col items-center">
-                  <div className="w-full max-w-md h-64 bg-gray-100 rounded mb-3 overflow-hidden">
-                    <img 
-                      src={uploadedImageUrl} 
-                      alt="Draft Template" 
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <Button
-                    className="mt-4 bg-brand-500 hover:bg-brand-600 text-white rounded-md px-4 py-2"
-                    onClick={() => uploadedImageUrl && onCreateTemplate(uploadedImageUrl)}
+          </div>
+
+          {/* Saved Templates */}
+          {savedTemplates.length > 0 && (
+            <div>
+              <h3 className="text-lg font-medium mb-4">Saved Templates</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {savedTemplates.map(template => (
+                  <Card 
+                    key={template.id}
+                    className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-green-300 relative" 
+                    onClick={() => onSelectTemplate(template)}
                   >
-                    Save as Live Template
-                  </Button>
-                  <p className="text-sm text-gray-500 mt-4">
-                    This draft template will be saved to Live Templates when you click save.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
+                    {onDeleteTemplate && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2 z-10 w-8 h-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteTemplate(template.id);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <CardContent className="p-4 flex flex-col items-center">
+                      <div className="w-full h-32 bg-gray-100 rounded mb-3 overflow-hidden">
+                        <img 
+                          src={template.imageUrl} 
+                          alt={template.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <h3 className="font-medium text-center">{template.name}</h3>
+                      <p className="text-xs text-gray-500 mt-1">Custom Template</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           )}
-        </Tabs>
+        </div>
       </CardContent>
     </Card>
   );

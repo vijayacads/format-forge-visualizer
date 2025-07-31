@@ -12,9 +12,12 @@ import { jsPDF } from 'jspdf';
 interface TemplatePreviewProps {
   template: Template;
   fields: FormField[];
+  onSaveTemplate?: () => void;
+  isAdmin?: boolean;
+  onPositionsChange?: (positions: {[key: string]: {x: number, y: number, width: number, height: number}}) => void;
 }
 
-const TemplatePreview = ({ template, fields }: TemplatePreviewProps) => {
+const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, onPositionsChange }: TemplatePreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -256,19 +259,27 @@ const TemplatePreview = ({ template, fields }: TemplatePreviewProps) => {
       if (fields.length > 0 && !Object.keys(fieldPositions).length) {
         const initialPositions: {[key: string]: {x: number, y: number, width: number, height: number}} = {};
         fields.forEach(field => {
-          const position = field.position || { x: 100, y: 100, width: 250, height: 40 };
+          // Use saved positions from template if available, otherwise use field.position or default
+          const savedPosition = template.fieldPositions?.[field.id];
+          const position = savedPosition || field.position || { x: 100, y: 100, width: 250, height: 40 };
           initialPositions[field.id] = position;
         });
         setFieldPositions(initialPositions);
       }
-    }, [fields]);
+    }, [fields, template.fieldPositions]);
 
     // Handle field position updates
     const updateFieldPosition = (fieldId: string, newPosition: {x: number, y: number, width: number, height: number}) => {
-      setFieldPositions(prev => ({
-        ...prev,
+      const updatedPositions = {
+        ...fieldPositions,
         [fieldId]: newPosition
-      }));
+      };
+      setFieldPositions(updatedPositions);
+      
+      // Notify parent component of position changes
+      if (onPositionsChange) {
+        onPositionsChange(updatedPositions);
+      }
     };
 
     // Handle mouse drag for positioning
@@ -591,13 +602,24 @@ const TemplatePreview = ({ template, fields }: TemplatePreviewProps) => {
         </ScrollArea>
       </CardContent>
       <CardFooter className="border-t pt-4">
-        <Button 
-          onClick={handleDownload} 
-          className="bg-brand-500 hover:bg-brand-600 text-white"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Download as PDF
-        </Button>
+        <div className="flex justify-between w-full">
+          <Button 
+            onClick={handleDownload} 
+            className="bg-brand-500 hover:bg-brand-600 text-white"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download as PDF
+          </Button>
+          
+          {isAdmin && template.type === 'custom' && onSaveTemplate && (
+            <Button 
+              onClick={onSaveTemplate}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Save as Live Template
+            </Button>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

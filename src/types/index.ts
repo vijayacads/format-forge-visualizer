@@ -18,6 +18,7 @@ export type Template = {
   imageUrl?: string;
   fields: FormField[];
   layout: TemplateLayout;
+  fieldPositions?: {[key: string]: {x: number, y: number, width: number, height: number}};
 };
 
 export type TemplateLayout = {

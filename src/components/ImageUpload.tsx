@@ -8,7 +8,7 @@ import OCRService, { DetectedField } from '@/services/ocrService';
 
 interface ImageUploadProps {
   onImageUploaded: (imageUrl: string) => void;
-  onFieldsDetected?: (fields: DetectedField[]) => void;
+  onFieldsDetected?: (fields: DetectedField[], imageUrl: string) => void;
 }
 
 const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) => {
@@ -37,7 +37,7 @@ const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) =>
       setDetectedFields(result.fields);
       
       if (onFieldsDetected) {
-        onFieldsDetected(result.fields);
+        onFieldsDetected(result.fields, imageUrl);
       }
 
       toast({
