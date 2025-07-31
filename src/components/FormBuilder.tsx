@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import RichTextEditor from './RichTextEditor';
 interface FormBuilderProps {
   template: Template;
   onChange: (fields: FormField[]) => void;
@@ -52,16 +53,36 @@ const FormBuilder = ({
                 </option>)}
             </select>
           </div>;
+      case 'richtext':
+        return <div key={field.id} className="mb-4">
+            <Label htmlFor={field.id} className="mb-1 block">
+              {field.label} {field.required && <span className="text-red-500">*</span>}
+            </Label>
+            <RichTextEditor
+              value={field.value}
+              onChange={value => handleFieldChange(field.id, value)}
+              placeholder={field.placeholder}
+              defaultBullets={field.defaultBullets}
+            />
+          </div>;
       default:
         return <div key={field.id} className="mb-4">
-            
-            
+            <Label htmlFor={field.id} className="mb-1 block">
+              {field.label} {field.required && <span className="text-red-500">*</span>}
+            </Label>
+            <Input 
+              id={field.id} 
+              value={field.value} 
+              onChange={e => handleFieldChange(field.id, e.target.value)} 
+              placeholder={field.placeholder}
+              type={field.type === 'date' ? 'date' : field.type === 'email' ? 'email' : field.type === 'phone' ? 'tel' : 'text'}
+            />
           </div>;
     }
   };
   return <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-xl">Enter Your SWOT Details</CardTitle>
+        <CardTitle className="text-xl">Enter Your Details</CardTitle>
       </CardHeader>
       <CardContent>
         <form className="space-y-6">

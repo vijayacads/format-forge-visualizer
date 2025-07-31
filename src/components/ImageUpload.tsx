@@ -2,17 +2,21 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, Image } from "lucide-react";
+import { Upload, Image, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import OCRService, { DetectedField } from '@/services/ocrService';
 
 interface ImageUploadProps {
   onImageUploaded: (imageUrl: string) => void;
+  onFieldsDetected?: (fields: DetectedField[]) => void;
 }
 
-const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
+const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [detectedFields, setDetectedFields] = useState<DetectedField[]>([]);
   const { toast } = useToast();
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -22,6 +26,39 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
 
   const handleDragLeave = () => {
     setIsDragging(false);
+  };
+
+  const processImageWithOCR = async (imageUrl: string) => {
+    setIsProcessing(true);
+    try {
+      const ocrService = OCRService.getInstance();
+      const result = await ocrService.processImage(imageUrl);
+      
+      setDetectedFields(result.fields);
+      
+      if (onFieldsDetected) {
+        onFieldsDetected(result.fields);
+      }
+
+      toast({
+        title: "OCR Processing Complete",
+        description: `Detected ${result.fields.length} form fields from the image.`,
+        variant: "default",
+      });
+
+      console.log('Detected fields:', result.fields);
+      console.log('Extracted text:', result.text);
+      
+    } catch (error) {
+      console.error('OCR processing failed:', error);
+      toast({
+        title: "OCR Processing Failed",
+        description: "Could not detect form fields from the image. You can still create a template manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const processImage = (file: File) => {
@@ -47,7 +84,7 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
     
     // Create a preview
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const result = e.target?.result as string;
       setPreview(result);
       onImageUploaded(result);
@@ -55,9 +92,12 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
       
       toast({
         title: "Image uploaded",
-        description: "Your image has been processed successfully.",
+        description: "Processing image with OCR to detect form fields...",
         variant: "default",
       });
+
+      // Process with OCR
+      await processImageWithOCR(result);
     };
     reader.readAsDataURL(file);
   };
@@ -111,6 +151,31 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
                 alt="Uploaded template"
                 className="max-h-64 mx-auto rounded-md object-contain"
               />
+              
+              {isProcessing && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-md">
+                  <div className="text-white text-center">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                    <p>Processing with OCR...</p>
+                  </div>
+                </div>
+              )}
+              
+              {detectedFields.length > 0 && !isProcessing && (
+                <div className="mt-4 p-3 bg-green-50 rounded-md">
+                  <h4 className="font-medium text-green-800 mb-2">
+                    Detected {detectedFields.length} form fields:
+                  </h4>
+                  <div className="text-sm text-green-700">
+                    {detectedFields.map((field, index) => (
+                      <div key={field.id} className="mb-1">
+                        • {field.label} ({field.type})
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <label className="cursor-pointer mt-4 inline-block">
                 <span className="text-brand-600 font-medium hover:text-brand-500">
                   Upload another
@@ -129,7 +194,7 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
                 {isUploading ? (
                   <div className="animate-pulse">
                     <Image className="h-12 w-12 text-brand-400 mb-3" />
-                    <p>Processing image...</p>
+                    <p>Uploading image...</p>
                   </div>
                 ) : (
                   <>
@@ -151,7 +216,7 @@ const ImageUpload = ({ onImageUploaded }: ImageUploadProps) => {
                 )}
               </div>
               <p className="text-xs text-gray-400 mt-4">
-                Supports JPG, PNG, GIF up to 5MB
+                Supports JPG, PNG, GIF up to 5MB. OCR will automatically detect form fields.
               </p>
             </>
           )}

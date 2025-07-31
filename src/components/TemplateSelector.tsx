@@ -118,15 +118,16 @@ const DEFAULT_TEMPLATES: Template[] = [
     type: 'swot',
     imageUrl: '/placeholder.svg',
     fields: [
-      { id: 'title', label: 'Analysis Title', type: 'text', value: '', required: true },
-      { id: 'strengths', label: 'Strengths', type: 'textarea', value: '' },
-      { id: 'weaknesses', label: 'Weaknesses', type: 'textarea', value: '' },
-      { id: 'opportunities', label: 'Opportunities', type: 'textarea', value: '' },
-      { id: 'threats', label: 'Threats', type: 'textarea', value: '' },
+      { id: 'name', label: 'Enter your Name', type: 'text', value: '', required: true },
+      { id: 'email', label: 'Email ID', type: 'text', value: '', required: true },
+      { id: 'strengths', label: 'Strengths', type: 'richtext', value: '', defaultBullets: true },
+      { id: 'weaknesses', label: 'Weaknesses', type: 'richtext', value: '', defaultBullets: true },
+      { id: 'opportunities', label: 'Opportunities', type: 'richtext', value: '', defaultBullets: true },
+      { id: 'threats', label: 'Threats', type: 'richtext', value: '', defaultBullets: true },
     ],
     layout: {
       sections: [
-        { id: 'header', fieldIds: ['title'] },
+        { id: 'header', fieldIds: ['name', 'email'] },
         { id: 'strengths', title: 'Strengths', fieldIds: ['strengths'] },
         { id: 'weaknesses', title: 'Weaknesses', fieldIds: ['weaknesses'] },
         { id: 'opportunities', title: 'Opportunities', fieldIds: ['opportunities'] },

@@ -2,11 +2,13 @@
 export type FormField = {
   id: string;
   label: string;
-  type: 'text' | 'textarea' | 'date' | 'select' | 'image';
+  type: 'text' | 'textarea' | 'date' | 'select' | 'image' | 'richtext' | 'email' | 'phone';
   value: string;
   options?: string[];
   placeholder?: string;
   required?: boolean;
+  defaultBullets?: boolean;
+  position?: { x: number; y: number; width: number; height: number };
 };
 
 export type Template = {

@@ -84,3 +84,176 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* React Quill Editor Styles */
+.rich-text-editor .ql-container {
+  min-height: 120px;
+  font-size: 16px;
+  direction: ltr;
+  text-align: left;
+}
+
+.rich-text-editor .ql-editor {
+  min-height: 120px;
+  direction: ltr;
+  text-align: left;
+}
+
+.rich-text-editor .ql-toolbar {
+  border-top: 1px solid #e2e8f0;
+  border-left: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: none;
+  background-color: #f8fafc;
+}
+
+.rich-text-editor .ql-container {
+  border-bottom: 1px solid #e2e8f0;
+  border-left: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-top: none;
+}
+
+.rich-text-editor .ql-editor.ql-blank::before {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* React Quill Content Rendering Styles for Preview */
+.ql-editor {
+  line-height: 1.5;
+}
+
+.ql-editor p {
+  margin-bottom: 0.5rem;
+}
+
+.ql-editor ul,
+.ql-editor ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.ql-editor li {
+  margin-bottom: 0.25rem;
+}
+
+.ql-editor ul > li {
+  list-style-type: disc;
+}
+
+.ql-editor ol > li {
+  list-style-type: decimal;
+}
+
+.ql-editor ul > li::before {
+  content: "•";
+  color: #374151;
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
+.ql-editor ol > li::before {
+  content: counter(list-item) ".";
+  color: #374151;
+  font-weight: bold;
+  display: inline-block;
+  width: 1.5em;
+  margin-left: -1.5em;
+}
+
+/* Text alignment */
+.ql-editor .ql-align-left {
+  text-align: left;
+}
+
+.ql-editor .ql-align-center {
+  text-align: center;
+}
+
+.ql-editor .ql-align-right {
+  text-align: right;
+}
+
+.ql-editor .ql-align-justify {
+  text-align: justify;
+}
+
+/* Headers */
+.ql-editor h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
+
+.ql-editor h2 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
+
+.ql-editor h3 {
+  font-size: 1.125rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
+
+/* Colors */
+.ql-editor .ql-color-red {
+  color: #dc2626;
+}
+
+.ql-editor .ql-color-orange {
+  color: #ea580c;
+}
+
+.ql-editor .ql-color-yellow {
+  color: #ca8a04;
+}
+
+.ql-editor .ql-color-green {
+  color: #16a34a;
+}
+
+.ql-editor .ql-color-blue {
+  color: #2563eb;
+}
+
+.ql-editor .ql-color-purple {
+  color: #9333ea;
+}
+
+.ql-editor .ql-color-pink {
+  color: #db2777;
+}
+
+/* Background colors */
+.ql-editor .ql-bg-red {
+  background-color: #fef2f2;
+}
+
+.ql-editor .ql-bg-orange {
+  background-color: #fff7ed;
+}
+
+.ql-editor .ql-bg-yellow {
+  background-color: #fefce8;
+}
+
+.ql-editor .ql-bg-green {
+  background-color: #f0fdf4;
+}
+
+.ql-editor .ql-bg-blue {
+  background-color: #eff6ff;
+}
+
+.ql-editor .ql-bg-purple {
+  background-color: #faf5ff;
+}
+
+.ql-editor .ql-bg-pink {
+  background-color: #fdf2f8;
+}

@@ -10,17 +10,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DetectedField } from '@/services/ocrService';
+
 const Index = () => {
   const [step, setStep] = useState<number>(1);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [formFields, setFormFields] = useState<FormField[]>([]);
+  const [detectedFields, setDetectedFields] = useState<DetectedField[]>([]);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [adminPassword, setAdminPassword] = useState<string>('');
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState<boolean>(false);
   const {
     toast
   } = useToast();
+
   const handleImageUploaded = (imageUrl: string) => {
     setUploadedImageUrl(imageUrl);
     toast({
@@ -37,77 +41,118 @@ const Index = () => {
       }
     }
   };
+
+  const handleFieldsDetected = (fields: DetectedField[]) => {
+    setDetectedFields(fields);
+    console.log('Fields detected in Index:', fields);
+  };
+
   const handleSelectTemplate = (template: Template) => {
     setSelectedTemplate(template);
     setFormFields(template.fields);
     setStep(2);
   };
+
   const handleCreateTemplate = (imageUrl: string) => {
-    // Create a custom template from the uploaded image with better section headers
+    // Create a custom template from the uploaded image with detected fields
     const customTemplate: Template = {
       id: 'custom-' + Date.now(),
       name: 'Custom Template',
       type: 'custom',
       imageUrl: imageUrl,
-      fields: [{
-        id: 'title',
-        label: 'Document Title',
-        type: 'text',
-        value: '',
-        required: true
-      }, {
-        id: 'section1',
-        label: 'Executive Summary',
-        type: 'textarea',
-        value: ''
-      }, {
-        id: 'section2',
-        label: 'Key Findings',
-        type: 'textarea',
-        value: ''
-      }, {
-        id: 'section3',
-        label: 'Recommendations',
-        type: 'textarea',
-        value: ''
-      }, {
-        id: 'section4',
-        label: 'Next Steps',
-        type: 'textarea',
-        value: ''
-      }],
+      fields: detectedFields.length > 0 
+        ? detectedFields.map((field, index) => ({
+            id: field.id,
+            label: field.label,
+            type: field.type === 'email' ? 'email' : 
+                  field.type === 'phone' ? 'phone' : 
+                  field.type === 'date' ? 'date' : 
+                  field.type === 'text' ? 'richtext' : // Convert text fields to richtext
+                  'richtext', // Default to richtext for all other fields
+            value: '',
+            required: field.required,
+            placeholder: `Enter ${field.label.toLowerCase()}`,
+            position: field.position, // Include position data from OCR
+            defaultBullets: field.type === 'textarea' || field.label.toLowerCase().includes('experience') || field.label.toLowerCase().includes('skills') || field.label.toLowerCase().includes('education') // Enable bullets for content fields
+          }))
+        : [
+            {
+              id: 'title',
+              label: 'Document Title',
+              type: 'text',
+              value: '',
+              required: true
+            }, {
+              id: 'section1',
+              label: 'Executive Summary',
+              type: 'textarea',
+              value: ''
+            }, {
+              id: 'section2',
+              label: 'Key Findings',
+              type: 'textarea',
+              value: ''
+            }, {
+              id: 'section3',
+              label: 'Recommendations',
+              type: 'textarea',
+              value: ''
+            }, {
+              id: 'section4',
+              label: 'Next Steps',
+              type: 'textarea',
+              value: ''
+            }
+          ],
       layout: {
-        sections: [{
-          id: 'header',
-          fieldIds: ['title']
-        }, {
-          id: 'section1',
-          title: 'Executive Summary',
-          fieldIds: ['section1']
-        }, {
-          id: 'section2',
-          title: 'Key Findings',
-          fieldIds: ['section2']
-        }, {
-          id: 'section3',
-          title: 'Recommendations',
-          fieldIds: ['section3']
-        }, {
-          id: 'section4',
-          title: 'Next Steps',
-          fieldIds: ['section4']
-        }]
+        sections: detectedFields.length > 0 
+          ? [
+              {
+                id: 'header',
+                fieldIds: detectedFields.filter(f => f.type === 'text').map(f => f.id)
+              },
+              ...detectedFields.filter(f => f.type === 'textarea').map((field, index) => ({
+                id: `section${index + 1}`,
+                title: field.label,
+                fieldIds: [field.id]
+              }))
+            ]
+          : [
+              {
+                id: 'header',
+                fieldIds: ['title']
+              }, {
+                id: 'section1',
+                title: 'Executive Summary',
+                fieldIds: ['section1']
+              }, {
+                id: 'section2',
+                title: 'Key Findings',
+                fieldIds: ['section2']
+              }, {
+                id: 'section3',
+                title: 'Recommendations',
+                fieldIds: ['section3']
+              }, {
+                id: 'section4',
+                title: 'Next Steps',
+                fieldIds: ['section4']
+              }
+            ]
       }
     };
     setSelectedTemplate(customTemplate);
     setFormFields(customTemplate.fields);
     setStep(2);
     toast({
-      title: "Custom Template Created",
-      description: "Your template has been created with the uploaded image. Fill in the sections and download when ready.",
+      title: detectedFields.length > 0 ? "Smart Template Created" : "Custom Template Created",
+      description: detectedFields.length > 0 
+        ? `Template created with ${detectedFields.length} automatically detected fields.`
+        : "Your template has been created with the uploaded image. Fill in the sections and download when ready.",
       variant: "default"
     });
   };
+
   const handleFormChange = (updatedFields: FormField[]) => {
     setFormFields(updatedFields);
   };
@@ -140,6 +185,7 @@ const Index = () => {
       variant: "default"
     });
   };
+
   const renderStep = () => {
     switch (step) {
       case 1:
@@ -148,7 +194,10 @@ const Index = () => {
               {isAdmin && (
                 <div>
                   <h2 className="text-xl font-semibold mb-4">Upload Template Image</h2>
-                  <ImageUpload onImageUploaded={handleImageUploaded} />
+                  <ImageUpload 
+                    onImageUploaded={handleImageUploaded} 
+                    onFieldsDetected={handleFieldsDetected}
+                  />
                 </div>
               )}
               <div className="flex flex-col">
@@ -182,6 +231,7 @@ const Index = () => {
         return null;
     }
   };
+
   return <div className="min-h-screen bg-slate-50">
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-6">
@@ -246,4 +296,5 @@ const Index = () => {
       </footer>
     </div>;
 };
+
 export default Index;
