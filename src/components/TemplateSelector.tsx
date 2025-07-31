@@ -2,151 +2,91 @@
 import { Template } from '@/types';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
-
-// Default templates
-const DEFAULT_TEMPLATES: Template[] = [
-  {
-    id: 'cv-professional',
-    name: 'Professional CV',
-    type: 'cv',
-    imageUrl: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
-    fields: [
-      { id: 'name', label: 'Enter your Name', type: 'text', value: '', required: true },
-      { id: 'title', label: 'Professional Title', type: 'text', value: '' },
-      { id: 'email', label: 'Email', type: 'text', value: '', required: true },
-      { id: 'phone', label: 'Phone', type: 'text', value: '' },
-      { id: 'address', label: 'Address', type: 'text', value: '' },
-      { id: 'summary', label: 'Professional Summary', type: 'textarea', value: '' },
-      { id: 'experience', label: 'Work Experience', type: 'textarea', value: '' },
-      { id: 'education', label: 'Education', type: 'textarea', value: '' },
-      { id: 'skills', label: 'Skills', type: 'textarea', value: '' },
-      { id: 'certifications', label: 'Certifications', type: 'textarea', value: '' },
-    ],
-    layout: {
-      sections: [
-        { id: 'header', fieldIds: ['name', 'title', 'email', 'phone', 'address'] },
-        { id: 'summary', title: 'Professional Summary', fieldIds: ['summary'] },
-        { id: 'experience', title: 'Work Experience', fieldIds: ['experience'] },
-        { id: 'education', title: 'Education', fieldIds: ['education'] },
-        { id: 'skills', title: 'Skills', fieldIds: ['skills'] },
-        { id: 'certifications', title: 'Certifications', fieldIds: ['certifications'] },
-      ]
-    }
-  },
-  {
-    id: 'cv-creative',
-    name: 'Creative CV',
-    type: 'cv',
-    imageUrl: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7',
-    fields: [
-      { id: 'name', label: 'Enter your Name', type: 'text', value: '', required: true },
-      { id: 'title', label: 'Creative Role', type: 'text', value: '', required: true },
-      { id: 'email', label: 'Email', type: 'text', value: '' },
-      { id: 'portfolio', label: 'Portfolio URL', type: 'text', value: '' },
-      { id: 'bio', label: 'Professional Bio', type: 'textarea', value: '' },
-      { id: 'projects', label: 'Featured Projects', type: 'textarea', value: '' },
-      { id: 'experience', label: 'Work Experience', type: 'textarea', value: '' },
-      { id: 'education', label: 'Education', type: 'textarea', value: '' },
-      { id: 'skills', label: 'Skills & Expertise', type: 'textarea', value: '' },
-      { id: 'awards', label: 'Awards & Recognition', type: 'textarea', value: '' },
-    ],
-    layout: {
-      sections: [
-        { id: 'header', fieldIds: ['name', 'title', 'email', 'portfolio'] },
-        { id: 'bio', title: 'Professional Bio', fieldIds: ['bio'] },
-        { id: 'projects', title: 'Featured Projects', fieldIds: ['projects'] },
-        { id: 'experience', title: 'Work Experience', fieldIds: ['experience'] },
-        { id: 'skills', title: 'Skills & Expertise', fieldIds: ['skills'] },
-        { id: 'education', title: 'Education', fieldIds: ['education'] },
-        { id: 'awards', title: 'Awards & Recognition', fieldIds: ['awards'] },
-      ]
-    }
-  },
-  {
-    id: 'cv-modern',
-    name: 'Modern CV',
-    type: 'cv',
-    imageUrl: '/placeholder.svg',
-    fields: [
-      { id: 'name', label: 'Enter your Name', type: 'text', value: '', required: true },
-      { id: 'title', label: 'Professional Title', type: 'text', value: '' },
-      { id: 'email', label: 'Email', type: 'text', value: '', required: true },
-      { id: 'phone', label: 'Phone', type: 'text', value: '' },
-      { id: 'summary', label: 'Professional Summary', type: 'textarea', value: '' },
-      { id: 'skills', label: 'Skills', type: 'textarea', value: '' },
-      { id: 'experience', label: 'Experience', type: 'textarea', value: '' },
-      { id: 'education', label: 'Education', type: 'textarea', value: '' },
-    ],
-    layout: {
-      sections: [
-        { id: 'header', fieldIds: ['name', 'title', 'email', 'phone'] },
-        { id: 'summary', title: 'Summary', fieldIds: ['summary'] },
-        { id: 'skills', title: 'Skills', fieldIds: ['skills'] },
-        { id: 'experience', title: 'Experience', fieldIds: ['experience'] },
-        { id: 'education', title: 'Education', fieldIds: ['education'] },
-      ]
-    }
-  },
-  {
-    id: 'resume-minimal',
-    name: 'Minimal Resume',
-    type: 'resume',
-    imageUrl: '/placeholder.svg',
-    fields: [
-      { id: 'name', label: 'Enter your Name', type: 'text', value: '', required: true },
-      { id: 'contact', label: 'Contact Info', type: 'text', value: '', required: true },
-      { id: 'objective', label: 'Objective', type: 'textarea', value: '' },
-      { id: 'experience', label: 'Professional Experience', type: 'textarea', value: '' },
-      { id: 'education', label: 'Education', type: 'textarea', value: '' },
-      { id: 'skills', label: 'Skills', type: 'textarea', value: '' },
-    ],
-    layout: {
-      sections: [
-        { id: 'header', fieldIds: ['name', 'contact'] },
-        { id: 'objective', title: 'Objective', fieldIds: ['objective'] },
-        { id: 'experience', title: 'Experience', fieldIds: ['experience'] },
-        { id: 'education', title: 'Education', fieldIds: ['education'] },
-        { id: 'skills', title: 'Skills', fieldIds: ['skills'] },
-      ]
-    }
-  },
-  {
-    id: 'swot',
-    name: 'SWOT Analysis',
-    type: 'swot',
-    imageUrl: '/placeholder.svg',
-    fields: [
-      { id: 'name', label: 'Enter your Name', type: 'text', value: '', required: true },
-      { id: 'email', label: 'Email ID', type: 'text', value: '', required: true },
-      { id: 'strengths', label: 'Strengths', type: 'richtext', value: '', defaultBullets: true },
-      { id: 'weaknesses', label: 'Weaknesses', type: 'richtext', value: '', defaultBullets: true },
-      { id: 'opportunities', label: 'Opportunities', type: 'richtext', value: '', defaultBullets: true },
-      { id: 'threats', label: 'Threats', type: 'richtext', value: '', defaultBullets: true },
-    ],
-    layout: {
-      sections: [
-        { id: 'header', fieldIds: ['name', 'email'] },
-        { id: 'strengths', title: 'Strengths', fieldIds: ['strengths'] },
-        { id: 'weaknesses', title: 'Weaknesses', fieldIds: ['weaknesses'] },
-        { id: 'opportunities', title: 'Opportunities', fieldIds: ['opportunities'] },
-        { id: 'threats', title: 'Threats', fieldIds: ['threats'] },
-      ]
-    }
-  }
-];
+import { Trash2, Edit2, Move } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import React from "react";
 
 interface TemplateSelectorProps {
   onSelectTemplate: (template: Template) => void;
   savedTemplates?: Template[];
   onDeleteTemplate?: (templateId: string) => void;
+  isAdmin?: boolean;
+  onRenameTemplate?: (templateId: string, newName: string) => void;
+  onReorderTemplates?: (templates: Template[]) => void;
 }
 
 const TemplateSelector = ({ 
   onSelectTemplate,
   savedTemplates = [],
-  onDeleteTemplate
+  onDeleteTemplate,
+  isAdmin,
+  onRenameTemplate,
+  onReorderTemplates
 }: TemplateSelectorProps) => {
+  const [renamingTemplateId, setRenamingTemplateId] = useState<string | null>(null);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [isEditingPositions, setIsEditingPositions] = useState(false);
+  const [draggedTemplateId, setDraggedTemplateId] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<Template[]>(savedTemplates);
+
+  // Update local templates when savedTemplates prop changes
+  React.useEffect(() => {
+    setTemplates(savedTemplates);
+  }, [savedTemplates]);
+
+  const handleRename = (templateId: string) => {
+    setRenamingTemplateId(templateId);
+    setNewTemplateName(savedTemplates.find(t => t.id === templateId)?.name || '');
+  };
+
+  const handleSaveRename = () => {
+    if (renamingTemplateId && newTemplateName.trim()) {
+      onRenameTemplate?.(renamingTemplateId, newTemplateName.trim());
+      setRenamingTemplateId(null);
+      setNewTemplateName('');
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, templateId: string) => {
+    setDraggedTemplateId(templateId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetTemplateId: string) => {
+    if (!draggedTemplateId || draggedTemplateId === targetTemplateId) return;
+    
+    e.preventDefault();
+    
+    const draggedIndex = templates.findIndex(t => t.id === draggedTemplateId);
+    const targetIndex = templates.findIndex(t => t.id === targetTemplateId);
+    
+    if (draggedIndex === -1 || targetIndex === -1) return;
+    
+    const newTemplates = [...templates];
+    const [draggedTemplate] = newTemplates.splice(draggedIndex, 1);
+    newTemplates.splice(targetIndex, 0, draggedTemplate);
+    
+    setTemplates(newTemplates);
+    setDraggedTemplateId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTemplateId(null);
+  };
+
+  const handleSavePositions = () => {
+    setIsEditingPositions(false);
+    onReorderTemplates?.(templates);
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -154,69 +94,201 @@ const TemplateSelector = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-8">
-          {/* Default Templates */}
-          <div>
-            <h3 className="text-lg font-medium mb-4">Default Templates</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {DEFAULT_TEMPLATES.map(template => (
-                <Card 
-                  key={template.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-brand-300" 
-                  onClick={() => onSelectTemplate(template)}
-                >
-                  <CardContent className="p-4 flex flex-col items-center">
-                    <div className="w-full h-32 bg-gray-100 rounded mb-3 overflow-hidden">
-                      <img 
-                        src={template.imageUrl} 
-                        alt={template.name} 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <h3 className="font-medium text-center">{template.name}</h3>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Saved Templates */}
-          {savedTemplates.length > 0 && (
+          {/* Templates */}
+          {savedTemplates.length > 0 ? (
             <div>
-              <h3 className="text-lg font-medium mb-4">Saved Templates</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {savedTemplates.map(template => (
-                  <Card 
-                    key={template.id}
-                    className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-green-300 relative" 
-                    onClick={() => onSelectTemplate(template)}
-                  >
-                    {onDeleteTemplate && (
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Templates</h3>
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    {isEditingPositions ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSavePositions}
+                        >
+                          Save Order
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setIsEditingPositions(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
                       <Button
-                        variant="destructive"
+                        variant="outline"
                         size="sm"
-                        className="absolute top-2 right-2 z-10 w-8 h-8 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteTemplate(template.id);
-                        }}
+                        onClick={() => setIsEditingPositions(true)}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        Edit Order
                       </Button>
                     )}
-                    <CardContent className="p-4 flex flex-col items-center">
-                      <div className="w-full h-32 bg-gray-100 rounded mb-3 overflow-hidden">
-                        <img 
-                          src={template.imageUrl} 
-                          alt={template.name} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <h3 className="font-medium text-center">{template.name}</h3>
-                      <p className="text-xs text-gray-500 mt-1">Custom Template</p>
-                    </CardContent>
-                  </Card>
+                  </div>
+                )}
+              </div>
+              {isEditingPositions && (
+                <div className="mb-4 p-3 bg-blue-50 rounded-md">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Edit Mode:</strong> 
+                    <br/>• <strong>Drag templates</strong> to reorder them
+                    <br/>• Click <strong>Save Order</strong> to keep changes or <strong>Cancel</strong> to discard
+                  </p>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-4">
+                {templates.map((template, index) => (
+                  <Card 
+                    key={template.id}
+                    className={`w-64 cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-green-300 relative ${
+                      isEditingPositions ? 'cursor-move' : ''
+                    } ${
+                      draggedTemplateId === template.id ? 'opacity-50 scale-95' : ''
+                    }`}
+                    onClick={(e) => {
+                      // Only navigate if not in editing mode and not clicking on admin buttons
+                      if (!isEditingPositions && !e.defaultPrevented) {
+                        onSelectTemplate(template);
+                      }
+                    }}
+                    draggable={isEditingPositions}
+                    onDragStart={(e) => handleDragStart(e, template.id)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, template.id)}
+                    onDragEnd={handleDragEnd}
+                  >
+                      {isAdmin && (
+                        <div className="absolute top-2 right-2 z-10 flex gap-1">
+                          {isEditingPositions ? (
+                            <div className="flex gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-8 h-8 p-0 cursor-move"
+                                onMouseDown={(e) => e.stopPropagation()}
+                              >
+                                <Move className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="w-8 h-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsEditingPositions(false);
+                                }}
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              <Dialog 
+                                open={renamingTemplateId === template.id} 
+                                onOpenChange={(open) => {
+                                  if (!open) {
+                                    setRenamingTemplateId(null);
+                                    setNewTemplateName('');
+                                  }
+                                }}
+                              >
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-8 h-8 p-0"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleRename(template.id);
+                                    }}
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }}
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Rename Template</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <Label htmlFor="templateName">Template Name</Label>
+                                      <Input
+                                        id="templateName"
+                                        value={newTemplateName}
+                                        onChange={(e) => setNewTemplateName(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleSaveRename();
+                                          }
+                                        }}
+                                        placeholder="Enter template name"
+                                        autoFocus
+                                      />
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                      <Button variant="outline" onClick={() => setRenamingTemplateId(null)}>
+                                        Cancel
+                                      </Button>
+                                      <Button onClick={handleSaveRename}>
+                                        Save
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-8 h-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsEditingPositions(true);
+                                }}
+                              >
+                                <Move className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="w-8 h-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteTemplate?.(template.id);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      <CardContent className="p-4 flex flex-col items-center">
+                        <div className="w-full h-32 bg-gray-100 rounded mb-3 overflow-hidden">
+                          <img 
+                            src={template.imageUrl} 
+                            alt={template.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <h3 className="font-medium text-center">{template.name}</h3>
+                        <p className="text-xs text-gray-500 mt-1">Template</p>
+                      </CardContent>
+                    </Card>
                 ))}
               </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No templates available. Upload a template image in Admin mode to get started.</p>
             </div>
           )}
         </div>

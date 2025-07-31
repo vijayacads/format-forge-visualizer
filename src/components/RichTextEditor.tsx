@@ -6,24 +6,14 @@ interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  defaultBullets?: boolean;
 }
 
-const RichTextEditor = ({ value, onChange, placeholder, defaultBullets = false }: RichTextEditorProps) => {
+const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) => {
   const [editorValue, setEditorValue] = useState(value);
 
   useEffect(() => {
     setEditorValue(value);
   }, [value]);
-
-  useEffect(() => {
-    if (defaultBullets && !value.trim()) {
-      // Start with a bullet point
-      const initialValue = '<ul><li><br></li></ul>';
-      setEditorValue(initialValue);
-      onChange(initialValue);
-    }
-  }, [defaultBullets]);
 
   const handleChange = (content: string) => {
     setEditorValue(content);

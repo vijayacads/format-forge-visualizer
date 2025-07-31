@@ -7,7 +7,6 @@ export type FormField = {
   options?: string[];
   placeholder?: string;
   required?: boolean;
-  defaultBullets?: boolean;
   position?: { x: number; y: number; width: number; height: number };
 };
 
@@ -19,6 +18,7 @@ export type Template = {
   fields: FormField[];
   layout: TemplateLayout;
   fieldPositions?: {[key: string]: {x: number, y: number, width: number, height: number}};
+  sectionTitles?: {[key: string]: string};
 };
 
 export type TemplateLayout = {

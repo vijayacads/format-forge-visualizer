@@ -138,32 +138,6 @@
   margin-bottom: 0.25rem;
 }
 
-.ql-editor ul > li {
-  list-style-type: disc;
-}
-
-.ql-editor ol > li {
-  list-style-type: decimal;
-}
-
-.ql-editor ul > li::before {
-  content: "•";
-  color: #374151;
-  font-weight: bold;
-  display: inline-block;
-  width: 1em;
-  margin-left: -1em;
-}
-
-.ql-editor ol > li::before {
-  content: counter(list-item) ".";
-  color: #374151;
-  font-weight: bold;
-  display: inline-block;
-  width: 1.5em;
-  margin-left: -1.5em;
-}
-
 /* Text alignment */
 .ql-editor .ql-align-left {
   text-align: left;

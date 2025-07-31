@@ -22,6 +22,7 @@ const Index = () => {
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState<boolean>(false);
   const [savedTemplates, setSavedTemplates] = useState<Template[]>([]);
   const [currentFieldPositions, setCurrentFieldPositions] = useState<{[key: string]: {x: number, y: number, width: number, height: number}}>({});
+  const [currentSectionTitles, setCurrentSectionTitles] = useState<{[key: string]: string}>({});
   const {
     toast
   } = useToast();
@@ -29,18 +30,42 @@ const Index = () => {
   // Load saved templates from localStorage on component mount
   useEffect(() => {
     const saved = localStorage.getItem('savedTemplates');
+    console.log('Loading saved templates from localStorage:', saved);
     if (saved) {
       try {
-        setSavedTemplates(JSON.parse(saved));
+        const parsedTemplates = JSON.parse(saved);
+        console.log('Parsed templates:', parsedTemplates);
+        if (parsedTemplates.length > 0) {
+          // Ensure all templates have the new sectionTitles property
+          const validatedTemplates = parsedTemplates.map((template: any) => ({
+            ...template,
+            sectionTitles: template.sectionTitles || {},
+            fieldPositions: template.fieldPositions || {}
+          }));
+          setSavedTemplates(validatedTemplates);
+          console.log('Successfully loaded templates:', validatedTemplates.length);
+        } else {
+          console.log('No templates found in localStorage');
+        }
       } catch (error) {
         console.error('Error loading saved templates:', error);
-        setSavedTemplates([]);
+        console.error('Raw localStorage data:', saved);
+        // If there's an error, try to clear the corrupted localStorage
+        localStorage.removeItem('savedTemplates');
+        toast({
+          title: "Template Recovery",
+          description: "There was an issue loading your saved templates. They have been reset.",
+          variant: "destructive",
+        });
       }
+    } else {
+      console.log('No saved templates found in localStorage');
     }
   }, []);
 
   // Save templates to localStorage whenever savedTemplates changes
   useEffect(() => {
+    console.log('Saving templates to localStorage:', savedTemplates);
     localStorage.setItem('savedTemplates', JSON.stringify(savedTemplates));
   }, [savedTemplates]);
 
@@ -85,8 +110,7 @@ const Index = () => {
             value: '',
             required: field.required,
             placeholder: `Enter ${field.label.toLowerCase()}`,
-            position: field.position, // Include position data from OCR
-            defaultBullets: field.type === 'textarea' || field.label.toLowerCase().includes('experience') || field.label.toLowerCase().includes('skills') || field.label.toLowerCase().includes('education') // Enable bullets for content fields
+            position: field.position // Include position data from OCR
           }))
         : [
             {
@@ -174,19 +198,25 @@ const Index = () => {
     setCurrentFieldPositions(positions);
   };
 
+  const handleSectionTitlesChange = (sectionTitles: {[key: string]: string}) => {
+    setCurrentSectionTitles(sectionTitles);
+  };
+
   const handleSaveTemplate = () => {
-    if (selectedTemplate && selectedTemplate.type === 'custom') {
+    if (selectedTemplate) {
       // Create a new template with the current field positions and data
       const savedTemplate: Template = {
         ...selectedTemplate,
         id: 'saved-' + Date.now(),
-        name: `Custom Template ${new Date().toLocaleDateString()}`,
+        name: selectedTemplate.type === 'custom' 
+          ? `Custom Template ${new Date().toLocaleDateString()}`
+          : `${selectedTemplate.name} ${new Date().toLocaleDateString()}`,
         fields: formFields.map(field => ({
           ...field,
           value: '' // Reset values for new instances
         })),
-        type: 'custom',
-        fieldPositions: currentFieldPositions // Save the current positions
+        fieldPositions: currentFieldPositions, // Save the current positions
+        sectionTitles: currentSectionTitles // Save the current section titles
       };
       
       // Save the template to state and localStorage
@@ -194,7 +224,7 @@ const Index = () => {
       
       toast({
         title: "Template Saved",
-        description: "Your template has been saved to Live Templates.",
+        description: "Your template has been saved to Templates.",
         variant: "default",
       });
       
@@ -205,6 +235,7 @@ const Index = () => {
       setDetectedFields([]);
       setUploadedImageUrl(null);
       setCurrentFieldPositions({});
+      setCurrentSectionTitles({});
     }
   };
 
@@ -212,7 +243,42 @@ const Index = () => {
     setSavedTemplates(prev => prev.filter(template => template.id !== templateId));
     toast({
       title: "Template Deleted",
-      description: "The template has been removed from your saved templates.",
+      description: "The template has been removed from your templates.",
+      variant: "default",
+    });
+  };
+
+  const handleRenameTemplate = (templateId: string, newName: string) => {
+    console.log('Renaming template:', templateId, 'to:', newName);
+    
+    setSavedTemplates(prev => {
+      const updatedTemplates = prev.map(template => 
+        template.id === templateId 
+          ? { 
+              ...template, 
+              name: newName,
+              fieldPositions: template.fieldPositions || {},
+              sectionTitles: template.sectionTitles || {}
+            }
+          : template
+      );
+      
+      console.log('Template after rename:', updatedTemplates.find(t => t.id === templateId));
+      return updatedTemplates;
+    });
+    
+    toast({
+      title: "Template Renamed",
+      description: "The template has been renamed successfully.",
+      variant: "default",
+    });
+  };
+
+  const handleReorderTemplates = (reorderedTemplates: Template[]) => {
+    setSavedTemplates(reorderedTemplates);
+    toast({
+      title: "Order Updated",
+      description: "Template order has been updated successfully.",
       variant: "default",
     });
   };
@@ -246,6 +312,51 @@ const Index = () => {
     });
   };
 
+  const handleRecoverTemplates = () => {
+    const saved = localStorage.getItem('savedTemplates');
+    console.log('Manual recovery - localStorage data:', saved);
+    
+    if (saved) {
+      try {
+        const parsedTemplates = JSON.parse(saved);
+        console.log('Manual recovery - parsed templates:', parsedTemplates);
+        
+        if (parsedTemplates.length > 0) {
+          const validatedTemplates = parsedTemplates.map((template: any) => ({
+            ...template,
+            sectionTitles: template.sectionTitles || {},
+            fieldPositions: template.fieldPositions || {}
+          }));
+          setSavedTemplates(validatedTemplates);
+          toast({
+            title: "Templates Recovered",
+            description: `Successfully recovered ${validatedTemplates.length} templates.`,
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "No Templates Found",
+            description: "No templates found in localStorage.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Manual recovery error:', error);
+        toast({
+          title: "Recovery Failed",
+          description: "Could not recover templates from localStorage.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "No Data Found",
+        description: "No template data found in localStorage.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const renderStep = () => {
     switch (step) {
       case 1:
@@ -261,11 +372,14 @@ const Index = () => {
                 </div>
               )}
               <div className="flex flex-col">
-                <h2 className="text-xl font-semibold mb-4">Select from Live Templates</h2>
+                <h2 className="text-xl font-semibold mb-4">Select a Template</h2>
                 <TemplateSelector 
                   onSelectTemplate={handleSelectTemplate}
                   savedTemplates={savedTemplates}
                   onDeleteTemplate={handleDeleteTemplate}
+                  onRenameTemplate={handleRenameTemplate}
+                  onReorderTemplates={handleReorderTemplates}
+                  isAdmin={isAdmin}
                 />
               </div>
             </div>
@@ -274,7 +388,11 @@ const Index = () => {
         return <>
             {selectedTemplate && <div className="flex flex-col md:flex-row gap-6">
                 <div className="md:w-1/2">
-                  <FormBuilder template={selectedTemplate} onChange={handleFormChange} />
+                  <FormBuilder 
+                    template={selectedTemplate} 
+                    onChange={handleFormChange} 
+                    onSectionTitlesChange={handleSectionTitlesChange}
+                  />
                 </div>
                 <div className="md:w-1/2">
                   <TemplatePreview 
@@ -309,6 +427,9 @@ const Index = () => {
               {isAdmin ? (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-green-600 font-medium">Admin Mode</span>
+                  <Button variant="outline" size="sm" onClick={handleRecoverTemplates}>
+                    Recover Templates
+                  </Button>
                   <Button variant="outline" size="sm" onClick={handleAdminLogout}>
                     Logout
                   </Button>

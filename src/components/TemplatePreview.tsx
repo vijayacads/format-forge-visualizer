@@ -20,6 +20,7 @@ interface TemplatePreviewProps {
 const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, onPositionsChange }: TemplatePreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [pdfMode, setPdfMode] = React.useState<'multi-page' | 'single-page'>('multi-page');
 
   const getFieldValue = (id: string) => {
     const field = fields.find(f => f.id === id);
@@ -112,11 +113,18 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
         description: "Creating your PDF document...",
       });
 
-      const canvas = await html2canvas(previewRef.current, {
+      // Find the actual template content area (excluding UI elements)
+      const templateContent = previewRef.current.querySelector('.relative') as HTMLElement;
+      if (!templateContent) {
+        throw new Error('Template content not found');
+      }
+
+      const canvas = await html2canvas(templateContent, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         logging: false,
+        backgroundColor: '#ffffff',
       });
 
       const imgData = canvas.toDataURL('image/png');
@@ -126,16 +134,81 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
         format: 'a4',
       });
       
-      // Calculate the dimensions to fit the content on the PDF page
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      if (pdfMode === 'single-page') {
+        // Single page mode - scale to fit with minimal margins
+        const pageWidth = 210;
+        const pageHeight = 297;
+        const margin = 5; // Reduced margin to 5mm
+        const contentWidth = pageWidth - (2 * margin);
+        const contentHeight = pageHeight - (2 * margin);
+        
+        // Calculate dimensions to fit within page
+        const imgWidth = contentWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        if (imgHeight <= contentHeight) {
+          // Content fits on one page
+          pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+        } else {
+          // Scale down to fit
+          const scale = contentHeight / imgHeight;
+          const scaledWidth = imgWidth * scale;
+          const scaledHeight = imgHeight * scale;
+          const xOffset = margin + (contentWidth - scaledWidth) / 2;
+          
+          pdf.addImage(imgData, 'PNG', xOffset, margin, scaledWidth, scaledHeight);
+        }
+      } else {
+        // Multi-page mode with minimal margins
+        const pageWidth = 210;
+        const pageHeight = 297;
+        const margin = 5; // Reduced margin to 5mm
+        const contentWidth = pageWidth - (2 * margin);
+        const contentHeight = pageHeight - (2 * margin);
+        
+        const imgWidth = contentWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const totalPages = Math.ceil(imgHeight / contentHeight);
+        
+        for (let page = 0; page < totalPages; page++) {
+          if (page > 0) {
+            pdf.addPage();
+          }
+          
+          const sourceY = page * contentHeight * (canvas.width / imgWidth);
+          const sourceHeight = Math.min(
+            contentHeight * (canvas.width / imgWidth),
+            canvas.height - sourceY
+          );
+          
+          const destHeight = (sourceHeight * imgWidth) / canvas.width;
+          
+          const tempCanvas = document.createElement('canvas');
+          const tempCtx = tempCanvas.getContext('2d');
+          tempCanvas.width = canvas.width;
+          tempCanvas.height = sourceHeight;
+          
+          if (tempCtx) {
+            tempCtx.drawImage(
+              canvas,
+              0, sourceY, canvas.width, sourceHeight,
+              0, 0, canvas.width, sourceHeight
+            );
+            
+            const pageImgData = tempCanvas.toDataURL('image/png');
+            pdf.addImage(pageImgData, 'PNG', margin, margin, imgWidth, destHeight);
+          }
+        }
+      }
       
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       pdf.save(`${template.name || 'template'}.pdf`);
+      
+      const pageCount = pdfMode === 'multi-page' ? 
+        Math.ceil((canvas.height * (210 - 10) / canvas.width) / (297 - 10)) : 1;
       
       toast({
         title: "Download Complete",
-        description: "Your template has been saved as a PDF.",
+        description: `Your template has been saved as a PDF with ${pageCount} page${pageCount > 1 ? 's' : ''}.`,
         variant: "default",
       });
     } catch (error) {
@@ -436,13 +509,15 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
       <div className="bg-white shadow p-6">
         <div className="mb-4 flex justify-between items-center">
           <h3 className="text-lg font-semibold">Template Preview</h3>
-          <Button 
-            variant={isEditing ? "destructive" : "outline"} 
-            size="sm"
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            {isEditing ? "Done Editing" : "Edit Positions"}
-          </Button>
+          {isAdmin && (
+            <Button 
+              variant={isEditing ? "destructive" : "outline"} 
+              size="sm"
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              {isEditing ? "Done Editing" : "Edit Positions"}
+            </Button>
+          )}
         </div>
         
         <div className="relative">
@@ -478,7 +553,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
                             className={`absolute px-2 py-1 rounded ${
                               isEditing 
                                 ? 'bg-yellow-200 bg-opacity-90 cursor-move' 
-                                : 'bg-white bg-opacity-90'
+                                : ''
                             }`}
                             style={{
                               left: `${position.x}px`,
@@ -489,7 +564,6 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
                             }}
                             onMouseDown={(e) => handleMouseDown(e, field.id)}
                           >
-                            <span className="text-sm font-semibold text-gray-800">{field.label}: </span>
                             {field.type === 'richtext' ? (
                               <div 
                                 className="text-sm text-gray-900 ql-editor"
@@ -527,7 +601,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
                           className={`absolute px-3 py-2 rounded ${
                             isEditing 
                               ? 'bg-blue-200 bg-opacity-90 cursor-move' 
-                              : 'bg-white bg-opacity-90'
+                              : ''
                           }`}
                           style={{
                             left: `${position.x}px`,
@@ -538,7 +612,6 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
                           }}
                           onMouseDown={(e) => handleMouseDown(e, field.id)}
                         >
-                          <div className="font-semibold text-gray-800 mb-1 text-sm">{field.label}:</div>
                           {field.type === 'richtext' ? (
                             <div 
                               className="text-gray-900 text-sm ql-editor"
@@ -577,16 +650,8 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
   };
 
   const renderTemplate = () => {
-    switch (template.type) {
-      case 'cv':
-        return renderCVTemplate();
-      case 'resume':
-        return renderCVTemplate(); // Uses same layout as CV
-      case 'swot':
-        return renderSWOTTemplate();
-      default:
-        return renderCustomTemplate();
-    }
+    // Use renderCustomTemplate for all templates to enable position editing
+    return renderCustomTemplate();
   };
 
   return (
@@ -602,21 +667,38 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
         </ScrollArea>
       </CardContent>
       <CardFooter className="border-t pt-4">
-        <div className="flex justify-between w-full">
-          <Button 
-            onClick={handleDownload} 
-            className="bg-brand-500 hover:bg-brand-600 text-white"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Download as PDF
-          </Button>
+        <div className="flex justify-between w-full items-center">
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={handleDownload} 
+              className="bg-brand-500 hover:bg-brand-600 text-white"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download as PDF
+            </Button>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-gray-600">PDF Mode:</span>
+              <select 
+                value={pdfMode} 
+                onChange={(e) => setPdfMode(e.target.value as 'multi-page' | 'single-page')}
+                className="border rounded px-2 py-1 text-xs"
+                title={pdfMode === 'multi-page' 
+                  ? 'Splits long content across multiple pages for better readability' 
+                  : 'Scales content to fit on one page (may be smaller)'
+                }
+              >
+                <option value="multi-page">Multi-page (Recommended)</option>
+                <option value="single-page">Single-page (Scaled)</option>
+              </select>
+            </div>
+          </div>
           
-          {isAdmin && template.type === 'custom' && onSaveTemplate && (
+          {isAdmin && onSaveTemplate && (
             <Button 
               onClick={onSaveTemplate}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
-              Save as Live Template
+              Save Template
             </Button>
           )}
         </div>
