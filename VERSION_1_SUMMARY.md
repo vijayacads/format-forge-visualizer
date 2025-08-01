@@ -72,6 +72,7 @@
 ## ⚠️ **KNOWN ISSUES**
 
 ### **Critical (Must Fix in V2)**
+- ❌ **Data Persistence**: Form data lost after PDF generation
 - ❌ **Security**: Hardcoded admin password
 - ❌ **Testing**: Zero test coverage
 - ⚠️ **Performance**: Large bundle size (1.2MB)
@@ -85,19 +86,20 @@
 ## 🚀 **VERSION 2 PRIORITIES**
 
 ### **Immediate (Next Sprint)**
-1. **Environment Variables** - Move admin password to env vars
-2. **Unit Tests** - Add Jest + React Testing Library
-3. **Error Boundaries** - Comprehensive error handling
+1. **Form Data Storage** ⭐ **TOP PRIORITY** - Store form data when PDF is generated
+2. **Environment Variables** - Move admin password to env vars
+3. **Unit Tests** - Add Jest + React Testing Library
+4. **Error Boundaries** - Comprehensive error handling
 
 ### **Short Term (1-2 months)**
-4. **Code Splitting** - Reduce bundle size
-5. **Security Audit** - Input validation, XSS prevention
-6. **Performance Optimization** - Lazy loading, caching
+5. **Code Splitting** - Reduce bundle size
+6. **Security Audit** - Input validation, XSS prevention
+7. **Performance Optimization** - Lazy loading, caching
 
 ### **Long Term (3-6 months)**
-7. **User Authentication** - Registration/login system
-8. **Advanced Features** - More field types, collaboration
-9. **Mobile Optimization** - PWA, touch-friendly interface
+8. **User Authentication** - Registration/login system
+9. **Advanced Features** - More field types, collaboration
+10. **Mobile Optimization** - PWA, touch-friendly interface
 
 ---
 
@@ -123,6 +125,12 @@
 - `vite.config.ts` - Build configuration
 - `tailwind.config.ts` - Styling configuration
 - `package.json` - Dependencies
+
+### **New Files for Version 2**
+- `src/services/formDataStorage.ts` - Form data storage service (to be created)
+- `src/types/formSubmission.ts` - Form submission data types (to be created)
+- `src/components/AdminDataView.tsx` - Admin data viewing interface (to be created)
+- `src/hooks/useFormDataStorage.ts` - Form data storage hook (to be created)
 
 ---
 
@@ -150,6 +158,7 @@ npx tsc --noEmit     # TypeScript type checking
 - `README.md` - Project overview and setup
 - `CODE_CLEANUP_SUMMARY.md` - Detailed V1 improvements
 - `VERSION_2_ROADMAP.md` - Comprehensive V2 planning
+- `QUICK_START.md` - Quick reference for Version 2 development
 
 ### **Code Documentation**
 - JSDoc comments on all major functions
@@ -168,6 +177,7 @@ npx tsc --noEmit     # TypeScript type checking
 - ✅ **Deployment**: Production-ready
 
 ### **Targets for V2**
+- 🎯 **Form Data Storage**: 100% capture rate of form submissions
 - 🎯 **Bundle Size**: < 500KB (from 1.2MB)
 - 🎯 **Test Coverage**: > 80% (from 0%)
 - 🎯 **Security Score**: > 90
@@ -189,6 +199,7 @@ Version 1 is a **solid, production-ready foundation** with excellent code qualit
 - Clear roadmap and priorities defined
 - Technical debt identified and planned
 - Foundation strong enough for major enhancements
+- **New Top Priority**: Form data storage system for data persistence
 
 ---
 
