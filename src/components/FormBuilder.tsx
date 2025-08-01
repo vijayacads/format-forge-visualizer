@@ -1,157 +1,192 @@
-import React, { useState, useEffect } from 'react';
-import { FormField, Template } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from '@/components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { FormField, Template } from '@/types';
 import RichTextEditor from './RichTextEditor';
+import { Plus, Trash2 } from 'lucide-react';
 
 interface FormBuilderProps {
   template: Template;
   onChange: (fields: FormField[]) => void;
-  onSectionTitlesChange?: (sectionTitles: {[key: string]: string}) => void;
+  isAdmin?: boolean;
 }
 
-const FormBuilder = ({
+const FormBuilder = React.memo(({
   template,
   onChange,
-  onSectionTitlesChange
+  isAdmin = false
 }: FormBuilderProps) => {
   const [fields, setFields] = useState<FormField[]>(template.fields);
-  const [expandedSections, setExpandedSections] = useState<string[]>(['header']);
-  const [editingSection, setEditingSection] = useState<string | null>(null);
-  const [sectionTitles, setSectionTitles] = useState<{[key: string]: string}>({});
+  const [expandedFields, setExpandedFields] = useState<string[]>(fields.map(f => f.id));
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
 
   useEffect(() => {
     setFields(template.fields);
-    // Expand the first section by default
-    if (template.layout.sections.length > 0) {
-      setExpandedSections([template.layout.sections[0].id]);
-    }
-    
-    // Initialize section titles from template or defaults
-    const titles: {[key: string]: string} = {};
-    template.layout.sections.forEach(section => {
-      // Use saved section titles if available, otherwise use section.title or default
-      titles[section.id] = template.sectionTitles?.[section.id] || section.title || 'Basic Information';
-    });
-    setSectionTitles(titles);
-  }, [template]);
+    setExpandedFields(template.fields.map(f => f.id));
+  }, [template.fields]);
 
-  const handleFieldChange = (id: string, value: string) => {
-    const updatedFields = fields.map(field => field.id === id ? {
-      ...field,
-      value
-    } : field);
+  const handleFieldChange = useCallback((id: string, value: string) => {
+    const updatedFields = fields.map(field => 
+      field.id === id ? { ...field, value } : field
+    );
     setFields(updatedFields);
     onChange(updatedFields);
-  };
+  }, [fields, onChange]);
 
-  const handleSectionTitleChange = (sectionId: string, newTitle: string) => {
-    setSectionTitles(prev => ({
-      ...prev,
-      [sectionId]: newTitle
-    }));
-  };
+  const handleFieldLabelChange = useCallback((id: string, newLabel: string) => {
+    const updatedFields = fields.map(field => 
+      field.id === id ? { ...field, label: newLabel } : field
+    );
+    setFields(updatedFields);
+    onChange(updatedFields);
+  }, [fields, onChange]);
 
-  const handleSectionTitleSave = (sectionId: string) => {
-    setEditingSection(null);
-    onSectionTitlesChange?.(sectionTitles);
-  };
+  const handleFieldLabelKeyDown = useCallback((e: React.KeyboardEvent, fieldId: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent form submission
+      e.stopPropagation(); // Prevent accordion toggle
+      setEditingFieldId(null); // Stop editing
+    }
+  }, []);
 
-  const renderField = (field: FormField) => {
-    // Set default placeholder for all fields
+  const handleFieldLabelBlur = useCallback((fieldId: string) => {
+    setEditingFieldId(null); // Stop editing when input loses focus
+  }, []);
+
+  const handleFieldLabelFocus = useCallback((fieldId: string) => {
+    setEditingFieldId(fieldId); // Start editing
+  }, []);
+
+  const handleAccordionChange = useCallback((value: string[]) => {
+    // Don't change accordion state if we're editing a field label
+    if (editingFieldId) {
+      return;
+    }
+    setExpandedFields(value);
+  }, [editingFieldId]);
+
+  const addNewField = useCallback(() => {
+    const newField: FormField = {
+      id: `field_${Date.now()}`,
+      label: 'New Field',
+      type: 'richtext', // Use richtext for consistency
+      value: '',
+      required: false
+    };
+    const updatedFields = [...fields, newField];
+    setFields(updatedFields);
+    setExpandedFields([...expandedFields, newField.id]);
+    onChange(updatedFields);
+  }, [fields, expandedFields, onChange]);
+
+  const removeField = useCallback((fieldId: string) => {
+    const updatedFields = fields.filter(field => field.id !== fieldId);
+    setFields(updatedFields);
+    setExpandedFields(expandedFields.filter(id => id !== fieldId));
+    onChange(updatedFields);
+  }, [fields, expandedFields, onChange]);
+
+  const renderField = useCallback((field: FormField) => {
     const placeholder = "Enter your Text Here";
     
     switch (field.type) {
       case 'textarea':
-        return <div key={field.id} className="mb-4">
-            <Textarea 
-              id={field.id} 
-              value={field.value} 
-              onChange={e => handleFieldChange(field.id, e.target.value)} 
-              placeholder={placeholder} 
-              className="resize-y min-h-[100px]" 
-            />
-          </div>;
-      case 'select':
-        return <div key={field.id} className="mb-4">
-            <select id={field.id} value={field.value} onChange={e => handleFieldChange(field.id, e.target.value)} className="w-full border rounded-md p-2">
-              <option value="">Select an option</option>
-              {field.options?.map(option => <option key={option} value={option}>
-                  {option}
-                </option>)}
-            </select>
-          </div>;
+        return (
+          <Textarea 
+            id={field.id} 
+            value={field.value} 
+            onChange={(e) => handleFieldChange(field.id, e.target.value)}
+            placeholder={placeholder}
+            className="min-h-[100px]"
+          />
+        );
       case 'richtext':
-        return <div key={field.id} className="mb-4">
-            <RichTextEditor
-              value={field.value}
-              onChange={value => handleFieldChange(field.id, value)}
-              placeholder={placeholder}
-            />
-          </div>;
+        return (
+          <RichTextEditor
+            value={field.value}
+            onChange={(value) => handleFieldChange(field.id, value)}
+            placeholder={placeholder}
+          />
+        );
       default:
-        return <div key={field.id} className="mb-4">
-            <Input 
-              id={field.id} 
-              value={field.value} 
-              onChange={e => handleFieldChange(field.id, e.target.value)} 
-              placeholder={placeholder}
-              type={field.type === 'date' ? 'date' : field.type === 'email' ? 'email' : field.type === 'phone' ? 'tel' : 'text'}
-            />
-          </div>;
+        return (
+          <Input 
+            id={field.id} 
+            value={field.value} 
+            onChange={(e) => handleFieldChange(field.id, e.target.value)}
+            placeholder={placeholder}
+          />
+        );
     }
-  };
+  }, [handleFieldChange]);
 
-  return <Card className="w-full">
+  // Memoize the fields array to prevent unnecessary re-renders
+  const memoizedFields = useMemo(() => fields, [fields]);
+
+  return (
+    <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="text-xl">Enter Your Details</CardTitle>
+        <CardTitle className="text-xl">Form Builder</CardTitle>
       </CardHeader>
-      <CardContent>
-        <form className="space-y-6">
-          <Accordion type="multiple" defaultValue={expandedSections} className="w-full">
-            {template.layout.sections.map(section => <AccordionItem key={section.id} value={section.id}>
-                <AccordionTrigger>
-                  {editingSection === section.id ? (
-                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+      <CardContent className="flex-grow">
+        <Accordion type="multiple" value={expandedFields} onValueChange={handleAccordionChange} className="w-full">
+          {memoizedFields.map(field => (
+            <AccordionItem key={field.id} value={field.id}>
+              <AccordionTrigger className="hover:no-underline">
+                <div className="flex items-center justify-between w-full pr-4">
+                  <div className="flex items-center gap-2">
+                    {isAdmin ? (
                       <Input
-                        value={sectionTitles[section.id] || ''}
-                        onChange={(e) => handleSectionTitleChange(section.id, e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            handleSectionTitleSave(section.id);
-                          }
-                        }}
-                        onBlur={() => handleSectionTitleSave(section.id)}
-                        autoFocus
-                        className="w-48"
+                        value={field.label}
+                        onChange={(e) => handleFieldLabelChange(field.id, e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => handleFieldLabelKeyDown(e, field.id)}
+                        onBlur={() => handleFieldLabelBlur(field.id)}
+                        onFocus={() => handleFieldLabelFocus(field.id)}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        className="w-48 text-left font-medium"
                       />
-                    </div>
-                  ) : (
-                    <div 
-                      className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingSection(section.id);
-                      }}
+                    ) : (
+                      <span className="font-medium">{field.label}</span>
+                    )}
+                  </div>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); removeField(field.id); }}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
                     >
-                      {sectionTitles[section.id] || 'Basic Information'}
-                    </div>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   )}
-                </AccordionTrigger>
-                <AccordionContent>
-                  {section.fieldIds.map(fieldId => {
-                const field = fields.find(f => f.id === fieldId);
-                return field ? renderField(field) : null;
-              })}
-                </AccordionContent>
-              </AccordionItem>)}
-          </Accordion>
-        </form>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                {renderField(field)}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+        
+        {isAdmin && (
+          <Button 
+            onClick={addNewField} 
+            variant="outline" 
+            className="mt-4 w-full"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add New Field
+          </Button>
+        )}
       </CardContent>
-    </Card>;
-};
+    </Card>
+  );
+});
+
+FormBuilder.displayName = 'FormBuilder';
+
 export default FormBuilder;

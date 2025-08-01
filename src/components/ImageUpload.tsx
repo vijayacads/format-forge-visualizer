@@ -45,12 +45,8 @@ const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) =>
         description: `Detected ${result.fields.length} form fields from the image.`,
         variant: "default",
       });
-
-      console.log('Detected fields:', result.fields);
-      console.log('Extracted text:', result.text);
       
     } catch (error) {
-      console.error('OCR processing failed:', error);
       toast({
         title: "OCR Processing Failed",
         description: "Could not detect form fields from the image. You can still create a template manually.",

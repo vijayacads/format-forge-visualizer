@@ -41,7 +41,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
   // Initialize positions when fields change
   React.useEffect(() => {
     initializePositions(fields, template);
-  }, [fields, template]);
+  }, [fields, template, initializePositions]);
 
   const getFieldValue = (id: string) => {
     const field = fields.find(f => f.id === id);
@@ -161,7 +161,6 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
         description: "There was an error creating your PDF. Please try again.",
         variant: "destructive",
       });
-      console.error("PDF generation error:", error);
     }
   };
 

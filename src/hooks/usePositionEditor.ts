@@ -7,6 +7,15 @@ interface Position {
   height: number;
 }
 
+interface Field {
+  id: string;
+  position?: Position;
+}
+
+interface Template {
+  fieldPositions?: {[key: string]: Position};
+}
+
 interface PositionEditorProps {
   isEditing: boolean;
   onPositionsChange?: (positions: {[key: string]: Position}) => void;
@@ -48,7 +57,7 @@ export const usePositionEditor = ({ isEditing, onPositionsChange }: PositionEdit
   }, [isEditing]);
 
   // Initialize field positions
-  const initializePositions = (fields: any[], template: any) => {
+  const initializePositions = (fields: Field[], template: Template) => {
     if (fields.length > 0 && !Object.keys(fieldPositions).length) {
       const initialPositions: {[key: string]: Position} = {};
       fields.forEach(field => {
@@ -128,50 +137,7 @@ export const usePositionEditor = ({ isEditing, onPositionsChange }: PositionEdit
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
       
-      let newPosition = { ...startPos };
-      
-      // Handle different resize directions
-      switch (handle) {
-        case 'nw': // top-left
-          newPosition.x = startPos.x + deltaX;
-          newPosition.y = startPos.y + deltaY;
-          newPosition.width = startPos.width - deltaX;
-          newPosition.height = startPos.height - deltaY;
-          break;
-        case 'ne': // top-right
-          newPosition.y = startPos.y + deltaY;
-          newPosition.width = startPos.width + deltaX;
-          newPosition.height = startPos.height - deltaY;
-          break;
-        case 'sw': // bottom-left
-          newPosition.x = startPos.x + deltaX;
-          newPosition.width = startPos.width - deltaX;
-          newPosition.height = startPos.height + deltaY;
-          break;
-        case 'se': // bottom-right
-          newPosition.width = startPos.width + deltaX;
-          newPosition.height = startPos.height + deltaY;
-          break;
-        case 'n': // top edge
-          newPosition.y = startPos.y + deltaY;
-          newPosition.height = startPos.height - deltaY;
-          break;
-        case 's': // bottom edge
-          newPosition.height = startPos.height + deltaY;
-          break;
-        case 'e': // right edge
-          newPosition.width = startPos.width + deltaX;
-          break;
-        case 'w': // left edge
-          newPosition.x = startPos.x + deltaX;
-          newPosition.width = startPos.width - deltaX;
-          break;
-      }
-      
-      // Ensure minimum size
-      newPosition.width = Math.max(newPosition.width, 100);
-      newPosition.height = Math.max(newPosition.height, 30);
-      
+      const newPosition = calculateNewPosition(startPos, handle, deltaX, deltaY);
       updateFieldPosition(fieldId, newPosition);
     };
     
@@ -193,6 +159,55 @@ export const usePositionEditor = ({ isEditing, onPositionsChange }: PositionEdit
     
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Helper function to calculate new position based on resize handle
+  const calculateNewPosition = (startPos: Position, handle: string, deltaX: number, deltaY: number): Position => {
+    const newPosition = { ...startPos };
+    
+    // Handle different resize directions
+    switch (handle) {
+      case 'nw': // top-left
+        newPosition.x = startPos.x + deltaX;
+        newPosition.y = startPos.y + deltaY;
+        newPosition.width = startPos.width - deltaX;
+        newPosition.height = startPos.height - deltaY;
+        break;
+      case 'ne': // top-right
+        newPosition.y = startPos.y + deltaY;
+        newPosition.width = startPos.width + deltaX;
+        newPosition.height = startPos.height - deltaY;
+        break;
+      case 'sw': // bottom-left
+        newPosition.x = startPos.x + deltaX;
+        newPosition.width = startPos.width - deltaX;
+        newPosition.height = startPos.height + deltaY;
+        break;
+      case 'se': // bottom-right
+        newPosition.width = startPos.width + deltaX;
+        newPosition.height = startPos.height + deltaY;
+        break;
+      case 'n': // top edge
+        newPosition.y = startPos.y + deltaY;
+        newPosition.height = startPos.height - deltaY;
+        break;
+      case 's': // bottom edge
+        newPosition.height = startPos.height + deltaY;
+        break;
+      case 'e': // right edge
+        newPosition.width = startPos.width + deltaX;
+        break;
+      case 'w': // left edge
+        newPosition.x = startPos.x + deltaX;
+        newPosition.width = startPos.width - deltaX;
+        break;
+    }
+    
+    // Ensure minimum size
+    newPosition.width = Math.max(newPosition.width, 100);
+    newPosition.height = Math.max(newPosition.height, 30);
+    
+    return newPosition;
   };
 
   return {
