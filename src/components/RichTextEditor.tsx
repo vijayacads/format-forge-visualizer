@@ -20,6 +20,11 @@ const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) =
     onChange(content);
   };
 
+  // Custom font size handler
+  const Size = ReactQuill.Quill.import('attributors/style/size');
+  Size.whitelist = ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'];
+  ReactQuill.Quill.register(Size, true);
+
   // Quill modules to attach to editor
   const modules = {
     toolbar: [

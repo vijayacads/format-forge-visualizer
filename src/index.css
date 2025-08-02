@@ -220,49 +220,94 @@
   text-align: justify;
 }
 
-/* Numerical Font Sizes */
+/* Numerical Font Sizes - React Quill Size Attributor */
 .ql-editor .ql-size-10px {
-  font-size: 10px;
+  font-size: 10px !important;
 }
 
 .ql-editor .ql-size-12px {
-  font-size: 12px;
+  font-size: 12px !important;
 }
 
 .ql-editor .ql-size-14px {
-  font-size: 14px;
+  font-size: 14px !important;
 }
 
 .ql-editor .ql-size-16px {
-  font-size: 16px;
+  font-size: 16px !important;
 }
 
 .ql-editor .ql-size-18px {
-  font-size: 18px;
+  font-size: 18px !important;
 }
 
 .ql-editor .ql-size-20px {
-  font-size: 20px;
+  font-size: 20px !important;
 }
 
 .ql-editor .ql-size-24px {
-  font-size: 24px;
+  font-size: 24px !important;
 }
 
 .ql-editor .ql-size-28px {
-  font-size: 28px;
+  font-size: 28px !important;
 }
 
 .ql-editor .ql-size-32px {
-  font-size: 32px;
+  font-size: 32px !important;
 }
 
 .ql-editor .ql-size-36px {
-  font-size: 36px;
+  font-size: 36px !important;
 }
 
 .ql-editor .ql-size-48px {
-  font-size: 48px;
+  font-size: 48px !important;
+}
+
+/* Alternative size classes that React Quill might use */
+.ql-editor [style*="font-size: 10px"] {
+  font-size: 10px !important;
+}
+
+.ql-editor [style*="font-size: 12px"] {
+  font-size: 12px !important;
+}
+
+.ql-editor [style*="font-size: 14px"] {
+  font-size: 14px !important;
+}
+
+.ql-editor [style*="font-size: 16px"] {
+  font-size: 16px !important;
+}
+
+.ql-editor [style*="font-size: 18px"] {
+  font-size: 18px !important;
+}
+
+.ql-editor [style*="font-size: 20px"] {
+  font-size: 20px !important;
+}
+
+.ql-editor [style*="font-size: 24px"] {
+  font-size: 24px !important;
+}
+
+.ql-editor [style*="font-size: 28px"] {
+  font-size: 28px !important;
+}
+
+.ql-editor [style*="font-size: 32px"] {
+  font-size: 32px !important;
+}
+
+.ql-editor [style*="font-size: 36px"] {
+  font-size: 36px !important;
+}
+
+.ql-editor [style*="font-size: 48px"] {
+  font-size: 48px !important;
 }
 
 /* Fallback styles for existing header content (backward compatibility) */
