@@ -21,7 +21,26 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": [
         "warn",
-        { allowConstantExport: true },
+        { 
+          allowConstantExport: true,
+          allowExportNames: [
+            // Shadcn UI component variants
+            "badgeVariants",
+            "buttonVariants", 
+            "toggleVariants",
+            "navigationMenuTriggerStyle",
+            // Shadcn UI hooks and utilities
+            "useFormField",
+            "useToast",
+            "useMediaQuery",
+            "useSidebar",
+            // Common utility exports
+            "cn",
+            "formatDate",
+            "formatCurrency",
+            "toast"
+          ]
+        },
       ],
       "@typescript-eslint/no-unused-vars": "off",
     },

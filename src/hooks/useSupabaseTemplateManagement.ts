@@ -1,20 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Template } from '@/types'
 import { supabaseService } from '@/services/supabaseService'
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from '@/components/ui/use-toast'
 
 export const useSupabaseTemplateManagement = () => {
   const [savedTemplates, setSavedTemplates] = useState<Template[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
-  // Load templates from Supabase on component mount
-  useEffect(() => {
-    loadTemplates()
-  }, [])
-
-  const loadTemplates = async () => {
+  const loadTemplates = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
@@ -31,7 +26,12 @@ export const useSupabaseTemplateManagement = () => {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [toast])
+
+  // Load templates from Supabase on component mount
+  useEffect(() => {
+    loadTemplates()
+  }, [loadTemplates])
 
   const saveTemplate = async (template: Template) => {
     try {
@@ -121,7 +121,9 @@ export const useSupabaseTemplateManagement = () => {
       
       toast({
         title: isPublic ? "Template Made Public" : "Template Made Private",
-        description: `Template is now ${isPublic ? 'public' : 'private'}.`,
+        description: isPublic 
+          ? "The template is now publicly accessible." 
+          : "The template is now private.",
         variant: "default",
       })
     } catch (err) {
@@ -137,14 +139,10 @@ export const useSupabaseTemplateManagement = () => {
   const createTemplateShare = async (templateId: string) => {
     try {
       const share = await supabaseService.createTemplateShare(templateId)
-      const shareUrl = `${window.location.origin}/share/${share.share_token}`
-      
-      // Copy to clipboard
-      await navigator.clipboard.writeText(shareUrl)
       
       toast({
         title: "Share Link Created",
-        description: "Share link has been copied to clipboard.",
+        description: "A share link has been created for this template.",
         variant: "default",
       })
       
@@ -156,18 +154,27 @@ export const useSupabaseTemplateManagement = () => {
         description: "Failed to create share link.",
         variant: "destructive",
       })
+      throw err
     }
   }
 
   const getTemplateByShareToken = async (shareToken: string) => {
     try {
       const template = await supabaseService.getTemplateByShareToken(shareToken)
+      
       if (template) {
+        // Increment access count
         await supabaseService.incrementShareAccessCount(shareToken)
       }
+      
       return template
     } catch (err) {
-      console.error('Error fetching shared template:', err)
+      console.error('Error fetching template by share token:', err)
+      toast({
+        title: "Error",
+        description: "Failed to load shared template.",
+        variant: "destructive",
+      })
       throw err
     }
   }
@@ -178,38 +185,20 @@ export const useSupabaseTemplateManagement = () => {
       return templates
     } catch (err) {
       console.error('Error fetching public templates:', err)
+      toast({
+        title: "Error",
+        description: "Failed to load public templates.",
+        variant: "destructive",
+      })
       throw err
     }
   }
-
-  // Real-time subscription for live updates
-  useEffect(() => {
-    const subscription = supabaseService.subscribeToTemplates((payload) => {
-      if (payload.eventType === 'INSERT') {
-        // New template added
-        const newTemplate = supabaseService.mapSupabaseToTemplate(payload.new)
-        setSavedTemplates(prev => [newTemplate, ...prev])
-      } else if (payload.eventType === 'UPDATE') {
-        // Template updated
-        const updatedTemplate = supabaseService.mapSupabaseToTemplate(payload.new)
-        setSavedTemplates(prev => prev.map(template => 
-          template.id === updatedTemplate.id ? updatedTemplate : template
-        ))
-      } else if (payload.eventType === 'DELETE') {
-        // Template deleted
-        setSavedTemplates(prev => prev.filter(template => template.id !== payload.old.id))
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
 
   return {
     savedTemplates,
     isLoading,
     error,
+    loadTemplates,
     saveTemplate,
     deleteTemplate,
     renameTemplate,
@@ -217,7 +206,6 @@ export const useSupabaseTemplateManagement = () => {
     toggleTemplatePublic,
     createTemplateShare,
     getTemplateByShareToken,
-    getPublicTemplates,
-    refreshTemplates: loadTemplates
+    getPublicTemplates
   }
 } 

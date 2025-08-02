@@ -23,7 +23,7 @@ const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) =
   // Quill modules to attach to editor
   const modules = {
     toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
+      [{ 'size': ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'] }],
       ['bold', 'italic', 'underline'],
       [{ 'list': 'ordered'}, { 'list': 'bullet' }],
       [{ 'color': [] }, { 'background': [] }],
@@ -34,7 +34,7 @@ const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) =
 
   // Quill editor formats
   const formats = [
-    'header',
+    'size',
     'bold', 'italic', 'underline',
     'list', 'bullet',
     'color', 'background',

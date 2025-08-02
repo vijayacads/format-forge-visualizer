@@ -5,8 +5,8 @@ export interface SupabaseTemplate {
   id: string
   name: string
   type: string
-  fields: any
-  field_positions: any
+  fields: FormField[]
+  field_positions: Record<string, { x: number; y: number; width: number; height: number }>
   image_url: string | null
   image_data: string | null
   created_at: string
@@ -23,6 +23,13 @@ export interface TemplateShare {
   created_at: string
   expires_at: string | null
   access_count: number
+}
+
+// Type for Supabase real-time payload
+export interface SupabaseRealtimePayload {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE'
+  new: Record<string, unknown> | null
+  old: Record<string, unknown> | null
 }
 
 class SupabaseService {
@@ -102,16 +109,16 @@ class SupabaseService {
           name: template.name,
           type: template.type,
           fields: template.fields,
-          field_positions: template.fieldPositions || {},
-          image_url: template.imageUrl || null,
-          image_data: template.imageData || null,
-          is_public: false,
-          share_token: this.generateShareToken()
+          field_positions: template.fieldPositions,
+          image_url: template.imageUrl,
+          image_data: template.imageData,
+          is_public: template.isPublic || false
         })
         .select()
         .single()
 
       if (error) throw error
+
       return this.mapSupabaseToTemplate(data)
     } catch (error) {
       console.error('Error creating template:', error)
@@ -121,14 +128,15 @@ class SupabaseService {
 
   async updateTemplate(id: string, updates: Partial<Template>): Promise<Template> {
     try {
-      const updateData: any = {
-        name: updates.name,
-        type: updates.type,
-        fields: updates.fields,
-        field_positions: updates.fieldPositions,
-        image_url: updates.imageUrl || null,
-        image_data: updates.imageData || null
-      }
+      const updateData: Record<string, unknown> = {}
+      
+      if (updates.name !== undefined) updateData.name = updates.name
+      if (updates.type !== undefined) updateData.type = updates.type
+      if (updates.fields !== undefined) updateData.fields = updates.fields
+      if (updates.fieldPositions !== undefined) updateData.field_positions = updates.fieldPositions
+      if (updates.imageUrl !== undefined) updateData.image_url = updates.imageUrl
+      if (updates.imageData !== undefined) updateData.image_data = updates.imageData
+      if (updates.isPublic !== undefined) updateData.is_public = updates.isPublic
 
       const { data, error } = await supabase
         .from('templates')
@@ -138,6 +146,7 @@ class SupabaseService {
         .single()
 
       if (error) throw error
+
       return this.mapSupabaseToTemplate(data)
     } catch (error) {
       console.error('Error updating template:', error)
@@ -155,6 +164,7 @@ class SupabaseService {
         .single()
 
       if (error) throw error
+
       return this.mapSupabaseToTemplate(data)
     } catch (error) {
       console.error('Error renaming template:', error)
@@ -162,6 +172,7 @@ class SupabaseService {
     }
   }
 
+  // Form Submission Operations
   async createFormSubmission(templateId: string, email: string, formData: FormData): Promise<FormSubmission> {
     try {
       const { data, error } = await supabase
@@ -175,6 +186,7 @@ class SupabaseService {
         .single()
 
       if (error) throw error
+
       return this.mapSupabaseToFormSubmission(data)
     } catch (error) {
       console.error('Error creating form submission:', error)
@@ -191,6 +203,7 @@ class SupabaseService {
         .order('created_at', { ascending: false })
 
       if (error) throw error
+
       return data.map(this.mapSupabaseToFormSubmission)
     } catch (error) {
       console.error('Error fetching form submissions:', error)
@@ -207,6 +220,7 @@ class SupabaseService {
         .order('created_at', { ascending: false })
 
       if (error) throw error
+
       return data.map(this.mapSupabaseToFormSubmission)
     } catch (error) {
       console.error('Error fetching form submissions by email:', error)
@@ -214,7 +228,13 @@ class SupabaseService {
     }
   }
 
-  private mapSupabaseToFormSubmission(data: any): FormSubmission {
+  private mapSupabaseToFormSubmission(data: {
+    id: string
+    template_id: string
+    email: string
+    form_data: FormData
+    created_at: string
+  }): FormSubmission {
     return {
       id: data.id,
       template_id: data.template_id,
@@ -333,14 +353,14 @@ class SupabaseService {
   }
 
   // Real-time subscriptions
-  subscribeToTemplates(callback: (payload: any) => void) {
+  subscribeToTemplates(callback: (payload: SupabaseRealtimePayload) => void) {
     return supabase
       .channel('templates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'templates' }, callback)
       .subscribe()
   }
 
-  subscribeToTemplateShares(callback: (payload: any) => void) {
+  subscribeToTemplateShares(callback: (payload: SupabaseRealtimePayload) => void) {
     return supabase
       .channel('template_shares')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'template_shares' }, callback)

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { FormField } from '@/types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -18,8 +19,8 @@ export interface Database {
           id: string
           name: string
           type: string
-          fields: any
-          field_positions: any
+          fields: FormField[]
+          field_positions: Record<string, { x: number; y: number; width: number; height: number }>
           created_at: string
           updated_at: string
           created_by: string | null
@@ -30,8 +31,8 @@ export interface Database {
           id?: string
           name: string
           type: string
-          fields: any
-          field_positions?: any
+          fields: FormField[]
+          field_positions?: Record<string, { x: number; y: number; width: number; height: number }>
           created_at?: string
           updated_at?: string
           created_by?: string | null
@@ -42,8 +43,8 @@ export interface Database {
           id?: string
           name?: string
           type?: string
-          fields?: any
-          field_positions?: any
+          fields?: FormField[]
+          field_positions?: Record<string, { x: number; y: number; width: number; height: number }>
           created_at?: string
           updated_at?: string
           created_by?: string | null
