@@ -134,7 +134,14 @@ const FormBuilder = React.memo(({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="text-xl">Form Builder</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl">Form Builder</CardTitle>
+          {isAdmin && (
+            <div className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">
+              Template ID: {template.id}
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex-grow">
         <Accordion type="multiple" value={expandedFields} onValueChange={handleAccordionChange} className="w-full">

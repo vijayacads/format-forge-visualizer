@@ -2,6 +2,11 @@
  * Utility functions for image handling
  */
 
+import { Template } from '@/types';
+
+// Simple cache for thumbnails
+const thumbnailCache = new Map<string, string>();
+
 /**
  * Converts an image file or URL to base64 format
  * @param file - The image file to convert
@@ -10,13 +15,8 @@
 export const convertImageToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve(result);
-    };
-    reader.onerror = () => {
-      reject(new Error('Failed to convert image to base64'));
-    };
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
     reader.readAsDataURL(file);
   });
 };
@@ -32,34 +32,30 @@ export const convertBlobUrlToBase64 = async (blobUrl: string): Promise<string> =
     const blob = await response.blob();
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        resolve(result);
-      };
-      reader.onerror = () => {
-        reject(new Error('Failed to convert blob URL to base64'));
-      };
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
   } catch (error) {
-    throw new Error('Failed to fetch blob URL');
+    console.error('Error converting blob URL to base64:', error);
+    throw error;
   }
 };
 
 /**
- * Checks if a string is a base64 encoded image
+ * Checks if a string is a base64 image
  * @param str - The string to check
- * @returns boolean - True if it's a base64 image
+ * @returns boolean - True if the string is a base64 image
  */
 export const isBase64Image = (str: string): boolean => {
   return str.startsWith('data:image/');
 };
 
 /**
- * Gets the image source URL, handling both base64 and regular URLs
- * @param imageData - The image data (base64 or URL)
- * @param imageUrl - Fallback image URL
- * @returns string - The image source URL
+ * Gets the appropriate image source for display
+ * @param imageData - Base64 image data
+ * @param imageUrl - Image URL
+ * @returns string | null - The image source to use
  */
 export const getImageSource = (imageData?: string | null, imageUrl?: string | null): string | null => {
   if (imageData && isBase64Image(imageData)) {
@@ -69,4 +65,127 @@ export const getImageSource = (imageData?: string | null, imageUrl?: string | nu
     return imageUrl;
   }
   return null;
+};
+
+/**
+ * Creates a thumbnail from a base64 image
+ * @param base64Data - The base64 image data
+ * @param width - Target width (default: 60)
+ * @param height - Target height (default: 60)
+ * @returns Promise<string> - Base64 thumbnail data
+ */
+export const createThumbnail = async (
+  base64Data: string, 
+  width: number = 60, 
+  height: number = 60
+): Promise<string> => {
+  // Create cache key
+  const cacheKey = `${base64Data.substring(0, 50)}_${width}x${height}`;
+  
+  // Check cache first
+  if (thumbnailCache.has(cacheKey)) {
+    return thumbnailCache.get(cacheKey)!;
+  }
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Set white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Calculate aspect ratio to maintain proportions
+      const aspectRatio = img.width / img.height;
+      let drawWidth = width;
+      let drawHeight = height;
+      let offsetX = 0;
+      let offsetY = 0;
+      
+      if (aspectRatio > 1) {
+        // Image is wider than tall
+        drawHeight = width / aspectRatio;
+        offsetY = (height - drawHeight) / 2;
+      } else {
+        // Image is taller than wide
+        drawWidth = height * aspectRatio;
+        offsetX = (width - drawWidth) / 2;
+      }
+      
+      // Draw the image centered and scaled
+      ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+      
+      // Convert to base64
+      const thumbnailData = canvas.toDataURL('image/jpeg', 0.8);
+      
+      // Cache the result
+      thumbnailCache.set(cacheKey, thumbnailData);
+      
+      resolve(thumbnailData);
+    };
+    
+    img.onerror = () => {
+      reject(new Error('Failed to load image for thumbnail creation'));
+    };
+    
+    img.src = base64Data;
+  });
+};
+
+/**
+ * Gets the appropriate icon for a template
+ * @param template - The template object
+ * @returns string - Either thumbnail base64 or fallback icon
+ */
+export const getTemplateIcon = (template: Template): string => {
+  // If template has image data, return a placeholder for now
+  // The actual thumbnail will be generated by getTemplateIconAsync
+  if (template.imageData) {
+    return '🖼️'; // Placeholder while thumbnail loads
+  }
+  
+  // Fallback icons based on template type
+  switch (template.type) {
+    case 'cv':
+      return '👤';
+    case 'resume':
+      return '📄';
+    case 'swot':
+      return '📊';
+    case 'custom':
+    default:
+      return '📋';
+  }
+};
+
+/**
+ * Gets template icon with async thumbnail generation
+ * @param template - The template object
+ * @param size - Thumbnail size (default: 60)
+ * @returns Promise<string> - Thumbnail or fallback icon
+ */
+export const getTemplateIconAsync = async (
+  template: Template, 
+  size: number = 60
+): Promise<string> => {
+  if (template.imageData) {
+    try {
+      return await createThumbnail(template.imageData, size, size);
+    } catch (error) {
+      console.warn('Failed to create thumbnail, using fallback:', error);
+      return getTemplateIcon(template);
+    }
+  }
+  
+  return getTemplateIcon(template);
 }; 

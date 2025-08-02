@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import React from "react";
+import TemplateIcon from './TemplateIcon';
 
 interface TemplateSelectorProps {
   onSelectTemplate: (template: Template) => void;
@@ -272,15 +273,14 @@ const TemplateSelector = ({
                         </div>
                       )}
                       <CardContent className="p-4 flex flex-col items-center">
-                        <div className="w-full h-32 bg-gray-100 rounded mb-3 overflow-hidden">
-                          <img 
-                            src={template.imageUrl} 
-                            alt={template.name} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
+                        <TemplateIcon template={template} size={120} className="mb-3" />
                         <h3 className="font-medium text-center">{template.name}</h3>
                         <p className="text-xs text-gray-500 mt-1">Template</p>
+                        {isAdmin && (
+                          <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 font-mono">
+                            ID: {template.id}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                 ))}
