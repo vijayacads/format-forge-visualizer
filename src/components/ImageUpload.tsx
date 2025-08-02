@@ -135,9 +135,9 @@ const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) =>
 
   return (
     <Card className="w-full">
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+          className={`border-2 border-dashed rounded-lg p-4 sm:p-6 text-center transition-colors ${
             isDragging
               ? "border-brand-500 bg-brand-50"
               : "border-gray-300 hover:border-brand-300"

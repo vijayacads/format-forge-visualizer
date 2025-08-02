@@ -159,7 +159,7 @@ const FormBuilder = React.memo(({
                         onBlur={() => handleFieldLabelBlur(field.id)}
                         onFocus={() => handleFieldLabelFocus(field.id)}
                         onMouseDown={(e) => e.stopPropagation()}
-                        className={`w-48 text-left font-medium ${field.id === 'email' ? 'bg-blue-50 border-blue-200' : ''}`}
+                        className={`w-full sm:w-48 text-left font-medium ${field.id === 'email' ? 'bg-blue-50 border-blue-200' : ''}`}
                         disabled={field.id === 'email'} // Prevent editing email field label
                       />
                     ) : (

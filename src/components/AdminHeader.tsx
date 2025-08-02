@@ -22,9 +22,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   closeAdminDialog
 }) => {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
       {isAdmin ? (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
           <span className="text-sm text-green-600 font-medium">Admin Mode</span>
           <Button variant="outline" size="sm" onClick={handleAdminLogout}>
             Logout

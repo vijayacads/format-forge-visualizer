@@ -140,11 +140,11 @@ const TemplateSelector = ({
                   </p>
                 </div>
               )}
-              <div className="flex flex-wrap gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {templates.map((template, index) => (
                   <Card 
                     key={template.id}
-                    className={`w-64 cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-green-300 relative ${
+                    className={`cursor-pointer hover:shadow-md transition-all duration-200 border-2 hover:border-green-300 relative ${
                       isEditingPositions ? 'cursor-move' : ''
                     } ${
                       draggedTemplateId === template.id ? 'opacity-50 scale-95' : ''

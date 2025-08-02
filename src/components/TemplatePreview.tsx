@@ -280,48 +280,57 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
         <CardTitle className="text-xl">Preview</CardTitle>
       </CardHeader>
       <CardContent className="flex-grow">
-        <ScrollArea className="h-[600px] rounded border">
+        <ScrollArea className="h-[400px] sm:h-[600px] rounded border">
           <div ref={previewRef}>
             {renderTemplate()}
           </div>
         </ScrollArea>
       </CardContent>
-      <CardFooter className="border-t pt-4">
-        <div className="flex justify-between w-full items-center">
-          <div className="flex items-center gap-2">
-            <Button 
-              onClick={handleDownload} 
-              className="bg-brand-500 hover:bg-brand-600 text-white"
+      <CardFooter className="flex flex-col sm:flex-row justify-between w-full items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          <Button 
+            onClick={handleDownload} 
+            className="w-full sm:w-auto"
+          >
+            <span className="hidden sm:inline">Download as PDF and Save Data</span>
+            <span className="sm:hidden">Download PDF</span>
+          </Button>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+            <span>PDF Mode:</span>
+            <select 
+              value={pdfMode} 
+              onChange={(e) => setPdfMode(e.target.value as 'single-page' | 'multi-page')}
+              className="border rounded px-2 py-1 text-sm"
             >
-              <Download className="mr-2 h-4 w-4" />
-              Download as PDF and Save Data
-            </Button>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-600">PDF Mode:</span>
-              <select 
-                value={pdfMode} 
-                onChange={(e) => setPdfMode(e.target.value as 'multi-page' | 'single-page')}
-                className="border rounded px-2 py-1 text-xs"
-                title={pdfMode === 'multi-page' 
-                  ? 'Splits long content across multiple pages for better readability' 
-                  : 'Scales content to fit on one page (may be smaller)'
-                }
-              >
-                <option value="multi-page">Multi-page (Recommended)</option>
-                <option value="single-page">Single-page (Scaled)</option>
-              </select>
-            </div>
+              <option value="single-page">Single Page</option>
+              <option value="multi-page">Multi Page</option>
+            </select>
           </div>
-          
-          {isAdmin && onSaveTemplate && (
-            <Button 
-              onClick={onSaveTemplate}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              Save Template
-            </Button>
-          )}
         </div>
+        {(() => {
+          const emailField = fields.find(field => field.id === 'email');
+          const emailValue = emailField?.value?.trim() || '';
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          const isValidEmail = emailRegex.test(emailValue);
+          
+          if (!emailValue) {
+            return (
+              <div className="text-red-500 text-sm">
+                Please enter a valid email address to download PDF
+              </div>
+            );
+          }
+          
+          if (!isValidEmail) {
+            return (
+              <div className="text-red-500 text-sm">
+                Please enter a valid email format
+              </div>
+            );
+          }
+          
+          return null;
+        })()}
       </CardFooter>
     </Card>
   );

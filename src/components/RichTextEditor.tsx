@@ -54,7 +54,31 @@ const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) =
           direction: 'ltr',
           textAlign: 'left'
         }}
+        className="mobile-friendly-editor"
       />
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .mobile-friendly-editor .ql-toolbar {
+            @media (max-width: 640px) {
+              padding: 8px !important;
+              flex-wrap: wrap !important;
+              gap: 4px !important;
+            }
+          }
+          .mobile-friendly-editor .ql-toolbar button {
+            @media (max-width: 640px) {
+              padding: 4px 6px !important;
+              margin: 2px !important;
+            }
+          }
+          .mobile-friendly-editor .ql-editor {
+            @media (max-width: 640px) {
+              min-height: 100px !important;
+              font-size: 16px !important;
+            }
+          }
+        `
+      }} />
     </div>
   );
 };

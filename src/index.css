@@ -99,6 +99,71 @@
   text-align: left;
 }
 
+/* Mobile-specific styles */
+@media (max-width: 640px) {
+  /* Improve touch targets */
+  button, 
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better spacing for mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Improve form inputs on mobile */
+  input, 
+  textarea, 
+  select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Better card spacing */
+  .card {
+    margin-bottom: 1rem;
+  }
+  
+  /* Improve button spacing */
+  .flex.gap-2 > * {
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Better modal/dialog sizing */
+  .dialog-content {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+  }
+}
+
+/* Additional mobile improvements */
+@media (max-width: 768px) {
+  /* Stack elements vertically on mobile */
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  
+  /* Full width on mobile */
+  .mobile-full {
+    width: 100% !important;
+  }
+  
+  /* Better text sizing */
+  h1 {
+    font-size: 1.875rem !important; /* text-3xl */
+  }
+  
+  h2 {
+    font-size: 1.5rem !important; /* text-2xl */
+  }
+  
+  h3 {
+    font-size: 1.25rem !important; /* text-xl */
+  }
+}
+
 .rich-text-editor .ql-toolbar {
   border-top: 1px solid #e2e8f0;
   border-left: 1px solid #e2e8f0;
