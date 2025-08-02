@@ -83,6 +83,11 @@ const FormBuilder = React.memo(({
   }, [fields, expandedFields, onChange]);
 
   const removeField = useCallback((fieldId: string) => {
+    // Prevent deletion of the email field
+    if (fieldId === 'email') {
+      return;
+    }
+    
     const updatedFields = fields.filter(field => field.id !== fieldId);
     setFields(updatedFields);
     setExpandedFields(expandedFields.filter(id => id !== fieldId));
@@ -147,13 +152,19 @@ const FormBuilder = React.memo(({
                         onBlur={() => handleFieldLabelBlur(field.id)}
                         onFocus={() => handleFieldLabelFocus(field.id)}
                         onMouseDown={(e) => e.stopPropagation()}
-                        className="w-48 text-left font-medium"
+                        className={`w-48 text-left font-medium ${field.id === 'email' ? 'bg-blue-50 border-blue-200' : ''}`}
+                        disabled={field.id === 'email'} // Prevent editing email field label
                       />
                     ) : (
                       <span className="font-medium">{field.label}</span>
                     )}
+                    {field.id === 'email' && (
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                        Required
+                      </span>
+                    )}
                   </div>
-                  {isAdmin && (
+                  {isAdmin && field.id !== 'email' && (
                     <Button
                       variant="ghost"
                       size="sm"

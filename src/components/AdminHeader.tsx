@@ -11,7 +11,6 @@ interface AdminHeaderProps {
   handleAdminLogin: () => void;
   handleAdminLogout: () => void;
   closeAdminDialog: () => void;
-  onRecoverTemplates: () => void;
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({ 
@@ -20,17 +19,13 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   setAdminPassword,
   handleAdminLogin,
   handleAdminLogout,
-  closeAdminDialog,
-  onRecoverTemplates
+  closeAdminDialog
 }) => {
   return (
     <div className="flex items-center gap-2">
       {isAdmin ? (
         <div className="flex items-center gap-2">
           <span className="text-sm text-green-600 font-medium">Admin Mode</span>
-          <Button variant="outline" size="sm" onClick={onRecoverTemplates}>
-            Recover Templates
-          </Button>
           <Button variant="outline" size="sm" onClick={handleAdminLogout}>
             Logout
           </Button>

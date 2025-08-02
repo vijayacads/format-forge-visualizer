@@ -10,15 +10,17 @@ export type FormField = {
   position?: { x: number; y: number; width: number; height: number };
 };
 
-export type Template = {
+export interface Template {
   id: string;
   name: string;
   type: 'cv' | 'resume' | 'swot' | 'custom';
-  imageUrl?: string;
   fields: FormField[];
-  layout: TemplateLayout;
-  fieldPositions?: {[key: string]: {x: number, y: number, width: number, height: number}};
-};
+  fieldPositions: { [key: string]: { x: number; y: number; width: number; height: number } };
+  layout?: { sections: TemplateSection[] };
+  imageUrl?: string | null;
+  imageData?: string | null;
+  isPublic?: boolean;
+}
 
 export type TemplateLayout = {
   sections: TemplateSection[];
@@ -34,3 +36,11 @@ export type TemplateSection = {
 export type FormData = {
   [key: string]: string;
 };
+
+export interface FormSubmission {
+  id: string;
+  template_id: string;
+  email: string;
+  form_data: FormData;
+  created_at: string;
+}

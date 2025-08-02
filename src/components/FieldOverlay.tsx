@@ -21,8 +21,8 @@ const FieldOverlay: React.FC<FieldOverlayProps> = ({
 }) => {
   const isHeaderField = field.id === 'name' || field.id === 'email';
   const overlayClass = isHeaderField 
-    ? `absolute px-2 py-1 rounded ${isEditing ? 'bg-yellow-200 bg-opacity-90 cursor-move' : ''}`
-    : `absolute px-3 py-2 rounded ${isEditing ? 'bg-blue-200 bg-opacity-90 cursor-move' : ''}`;
+    ? `absolute px-1 py-0.5 rounded ${isEditing ? 'bg-yellow-100 bg-opacity-30 cursor-move' : ''}`
+    : `absolute px-1 py-0.5 rounded ${isEditing ? 'bg-blue-100 bg-opacity-20 cursor-move' : ''}`;
 
   return (
     <div 

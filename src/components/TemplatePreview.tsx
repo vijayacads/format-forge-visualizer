@@ -10,16 +10,18 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { usePositionEditor } from '@/hooks/usePositionEditor';
 import TemplateRenderer from './TemplateRenderer';
+import { getImageSource } from '@/utils/imageUtils';
+import { supabaseService } from '@/services/supabaseService';
 
 interface TemplatePreviewProps {
   template: Template;
   fields: FormField[];
   onSaveTemplate?: () => void;
   isAdmin?: boolean;
-  onPositionsChange?: (positions: {[key: string]: {x: number, y: number, width: number, height: number}}) => void;
+  onTemplateUpdate?: (updatedTemplate: Template) => void;
 }
 
-const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, onPositionsChange }: TemplatePreviewProps) => {
+const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, onTemplateUpdate }: TemplatePreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [pdfMode, setPdfMode] = React.useState<'multi-page' | 'single-page'>('multi-page');
@@ -27,21 +29,16 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
   const [imageLoaded, setImageLoaded] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
 
-  // Use the position editor hook
+  // Use the position editor hook with single source of truth
   const {
-    fieldPositions,
-    initializePositions,
+    getFieldPositions,
     handleMouseDown,
     handleResizeStart
   } = usePositionEditor({
     isEditing,
-    onPositionsChange
+    template,
+    onTemplateUpdate: onTemplateUpdate || (() => {})
   });
-
-  // Initialize positions when fields change
-  React.useEffect(() => {
-    initializePositions(fields, template);
-  }, [fields, template, initializePositions]);
 
   const getFieldValue = (id: string) => {
     const field = fields.find(f => f.id === id);
@@ -51,7 +48,43 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
   const handleDownload = async () => {
     if (!previewRef.current) return;
     
+    // Validate email field before allowing download
+    const emailField = fields.find(field => field.id === 'email');
+    if (!emailField || !emailField.value.trim()) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address before downloading the PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailField.value.trim())) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address before downloading the PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
+      // Save form data to database before generating PDF
+      const formData: { [key: string]: string } = {};
+      const emailValue = emailField.value.trim();
+      
+      fields.forEach(field => {
+        if (field.value.trim() && field.id !== 'email') {
+          // Use field label as key instead of field ID for better readability
+          // Exclude email from form_data since it's stored as separate column
+          formData[field.label] = field.value;
+        }
+      });
+      
+      await supabaseService.createFormSubmission(template.id, emailValue, formData);
+      
       toast({
         title: "Preparing Download",
         description: "Creating your PDF document...",
@@ -98,64 +131,72 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
           const scale = contentHeight / imgHeight;
           const scaledWidth = imgWidth * scale;
           const scaledHeight = imgHeight * scale;
-          const xOffset = margin + (contentWidth - scaledWidth) / 2;
-          
+          const xOffset = (pageWidth - scaledWidth) / 2;
           pdf.addImage(imgData, 'PNG', xOffset, margin, scaledWidth, scaledHeight);
         }
       } else {
-        // Multi-page mode with minimal margins
+        // Multi-page mode - split content across pages
         const pageWidth = 210;
         const pageHeight = 297;
-        const margin = 5; // Reduced margin to 5mm
+        const margin = 10;
         const contentWidth = pageWidth - (2 * margin);
         const contentHeight = pageHeight - (2 * margin);
         
         const imgWidth = contentWidth;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        const totalPages = Math.ceil(imgHeight / contentHeight);
         
-        for (let page = 0; page < totalPages; page++) {
-          if (page > 0) {
-            pdf.addPage();
-          }
+        let remainingHeight = imgHeight;
+        let currentY = 0;
+        let pageNumber = 1;
+        
+        while (remainingHeight > 0) {
+          const heightOnThisPage = Math.min(remainingHeight, contentHeight);
+          const sourceY = currentY * (canvas.height / imgHeight);
+          const sourceHeight = heightOnThisPage * (canvas.height / imgHeight);
           
-          const sourceY = page * contentHeight * (canvas.width / imgWidth);
-          const sourceHeight = Math.min(
-            contentHeight * (canvas.width / imgWidth),
-            canvas.height - sourceY
-          );
+          // Create a temporary canvas for this page
+          const pageCanvas = document.createElement('canvas');
+          const pageCtx = pageCanvas.getContext('2d');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sourceHeight;
           
-          const destHeight = (sourceHeight * imgWidth) / canvas.width;
-          
-          const tempCanvas = document.createElement('canvas');
-          const tempCtx = tempCanvas.getContext('2d');
-          tempCanvas.width = canvas.width;
-          tempCanvas.height = sourceHeight;
-          
-          if (tempCtx) {
-            tempCtx.drawImage(
+          if (pageCtx) {
+            pageCtx.drawImage(
               canvas,
               0, sourceY, canvas.width, sourceHeight,
               0, 0, canvas.width, sourceHeight
             );
-            
-            const pageImgData = tempCanvas.toDataURL('image/png');
-            pdf.addImage(pageImgData, 'PNG', margin, margin, imgWidth, destHeight);
+          }
+          
+          const pageImgData = pageCanvas.toDataURL('image/png');
+          const pageImgHeight = (sourceHeight * imgWidth) / canvas.width;
+          
+          pdf.addImage(pageImgData, 'PNG', margin, margin, imgWidth, pageImgHeight);
+          
+          remainingHeight -= contentHeight;
+          currentY += contentHeight;
+          
+          if (remainingHeight > 0) {
+            pdf.addPage();
+            pageNumber++;
           }
         }
       }
+
+      // Generate filename
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const filename = `${template.name || 'document'}_${timestamp}.pdf`;
       
-      pdf.save(`${template.name || 'template'}.pdf`);
-      
-      const pageCount = pdfMode === 'multi-page' ? 
-        Math.ceil((canvas.height * (210 - 10) / canvas.width) / (297 - 10)) : 1;
+      pdf.save(filename);
       
       toast({
         title: "Download Complete",
-        description: `Your template has been saved as a PDF with ${pageCount} page${pageCount > 1 ? 's' : ''}.`,
+        description: `Your document has been saved as ${filename}`,
         variant: "default",
       });
+      
     } catch (error) {
+      console.error('Download error:', error);
       toast({
         title: "Download Failed",
         description: "There was an error creating your PDF. Please try again.",
@@ -165,6 +206,16 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
   };
 
   const renderCustomTemplate = () => {
+    const imageSource = getImageSource(template.imageData, template.imageUrl);
+    
+    if (!imageSource) {
+      return (
+        <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
+          <p className="text-gray-500">No image available</p>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-white shadow p-6">
         <div className="mb-4 flex justify-between items-center">
@@ -179,30 +230,29 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
             </Button>
           )}
         </div>
-        
-        <div className="relative">
-          {/* Background Image */}
-          {template.imageUrl && (
-            <img 
-              ref={setImageRef}
-              src={template.imageUrl} 
-              alt="Template Background" 
-              className="w-full h-auto object-contain rounded border border-gray-300" 
-              onLoad={() => setImageLoaded(true)}
+
+        <div className="relative w-full" ref={previewRef}>
+          <img
+            ref={setImageRef}
+            src={imageSource}
+            alt="Template background"
+            className="w-full h-auto object-contain rounded border border-gray-300"
+            onLoad={() => setImageLoaded(true)}
+            style={{ maxWidth: '100%' }}
+          />
+          
+          {imageLoaded && (
+            <TemplateRenderer
+              template={template}
+              fields={fields}
+              fieldPositions={getFieldPositions()}
+              isEditing={isEditing}
+              imageLoaded={imageLoaded}
+              getFieldValue={getFieldValue}
+              onMouseDown={handleMouseDown}
+              onResizeStart={handleResizeStart}
             />
           )}
-          
-          {/* Form Data Overlay with Positioned Fields */}
-          <TemplateRenderer
-            template={template}
-            fields={fields}
-            fieldPositions={fieldPositions}
-            isEditing={isEditing}
-            imageLoaded={imageLoaded}
-            getFieldValue={getFieldValue}
-            onMouseDown={handleMouseDown}
-            onResizeStart={handleResizeStart}
-          />
         </div>
         
         {isEditing && (
@@ -244,7 +294,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
               className="bg-brand-500 hover:bg-brand-600 text-white"
             >
               <Download className="mr-2 h-4 w-4" />
-              Download as PDF
+              Download as PDF and Save Data
             </Button>
             <div className="flex items-center gap-2 text-sm">
               <span className="text-gray-600">PDF Mode:</span>

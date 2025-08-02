@@ -5,40 +5,65 @@ import { useToast } from "@/components/ui/use-toast";
 export const useTemplateWorkflow = (onTemplateCreated: (template: Template, fields: FormField[]) => void) => {
   const { toast } = useToast();
 
-  const handleImageUploaded = (imageUrl: string) => {
+  const handleImageUploaded = (imageData: string) => {
     toast({
       title: "Image uploaded",
       description: "Processing image with OCR to detect form fields..."
     });
   };
 
-  const handleFieldsDetected = (fields: DetectedField[], imageUrl: string) => {
+  const handleFieldsDetected = (fields: DetectedField[], imageData: string) => {
     // Automatically create template and go to step 2 after OCR
-    handleCreateTemplate(imageUrl, fields);
+    handleCreateTemplate(imageData, fields);
   };
 
-  const handleCreateTemplate = (imageUrl: string, detectedFields: DetectedField[]) => {
+  const handleCreateTemplate = (imageData: string, detectedFields: DetectedField[]) => {
     // Create a custom template from the uploaded image with detected fields
     const customTemplate: Template = {
       id: 'custom-' + Date.now(),
       name: 'Custom Template',
       type: 'custom',
-      imageUrl: imageUrl,
+      imageUrl: null, // We'll use imageData for persistent storage
+      imageData: imageData, // Store the base64 image data for persistence
+      fieldPositions: {}, // Initialize empty field positions
       fields: detectedFields.length > 0 
-        ? detectedFields.map((field, index) => ({
-            id: field.id,
-            label: field.label,
-            type: field.type === 'email' ? 'email' : 
-                  field.type === 'phone' ? 'phone' : 
-                  field.type === 'date' ? 'date' : 
-                  field.type === 'text' ? 'richtext' : // Convert text fields to richtext
-                  'richtext', // Default to richtext for all other fields
-            value: '',
-            required: field.required,
-            placeholder: `Enter ${field.label.toLowerCase()}`,
-            position: field.position // Include position data from OCR
-          }))
+        ? [
+            // Always add email field first (mandatory)
+            {
+              id: 'email',
+              label: 'Email',
+              type: 'email',
+              value: '',
+              required: true,
+              placeholder: 'Enter your email address',
+              position: { x: 50, y: 50, width: 300, height: 40 } // Default position
+            },
+            // Then add detected fields
+            ...detectedFields.map((field, index) => ({
+              id: field.id,
+              label: field.label,
+              type: field.type === 'email' ? 'email' : 
+                    field.type === 'phone' ? 'phone' : 
+                    field.type === 'date' ? 'date' : 
+                    field.type === 'text' ? 'richtext' : // Convert text fields to richtext
+                    'richtext', // Default to richtext for all other fields
+              value: '',
+              required: field.required,
+              placeholder: `Enter ${field.label.toLowerCase()}`,
+              position: field.position // Include position data from OCR
+            }))
+          ]
         : [
+            // Always add email field first (mandatory)
+            {
+              id: 'email',
+              label: 'Email',
+              type: 'email',
+              value: '',
+              required: true,
+              placeholder: 'Enter your email address',
+              position: { x: 50, y: 50, width: 300, height: 40 } // Default position
+            },
             {
               id: 'title',
               label: 'Document Title',
@@ -77,8 +102,8 @@ export const useTemplateWorkflow = (onTemplateCreated: (template: Template, fiel
     toast({
       title: detectedFields.length > 0 ? "Smart Template Created" : "Custom Template Created",
       description: detectedFields.length > 0 
-        ? `Template created with ${detectedFields.length} automatically detected fields.`
-        : "Your template has been created with the uploaded image. Fill in the sections and download when ready.",
+        ? `Template created with ${detectedFields.length} automatically detected fields and mandatory email field.`
+        : "Your template has been created with the uploaded image and mandatory email field. Fill in the sections and download when ready.",
       variant: "default"
     });
   };

@@ -6,16 +6,14 @@ import FormBuilder from '@/components/FormBuilder';
 import TemplatePreview from '@/components/TemplatePreview';
 import AdminHeader from '@/components/AdminHeader';
 import { Button } from '@/components/ui/button';
-import { useTemplateManagement } from '@/hooks/useTemplateManagement';
+import { useSupabaseTemplateManagement } from '@/hooks/useSupabaseTemplateManagement';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useTemplateWorkflow } from '@/hooks/useTemplateWorkflow';
 
 const Index = () => {
   const [step, setStep] = useState<number>(1);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [formFields, setFormFields] = useState<FormField[]>([]);
-  const [currentFieldPositions, setCurrentFieldPositions] = useState<{[key: string]: {x: number, y: number, width: number, height: number}}>({});
 
   // Custom hooks for different concerns
   const { 
@@ -23,9 +21,10 @@ const Index = () => {
     saveTemplate, 
     deleteTemplate, 
     renameTemplate, 
-    reorderTemplates, 
-    recoverTemplates 
-  } = useTemplateManagement();
+    reorderTemplates,
+    isLoading,
+    error
+  } = useSupabaseTemplateManagement();
   
   const { 
     isAdmin,
@@ -48,25 +47,30 @@ const Index = () => {
     setFormFields(fields);
   };
 
-  const handleFieldPositionsChange = (positions: {[key: string]: {x: number, y: number, width: number, height: number}}) => {
-    setCurrentFieldPositions(positions);
+  // Update template when positions change (single source of truth)
+  const handleTemplateUpdate = (updatedTemplate: Template) => {
+    setSelectedTemplate(updatedTemplate);
   };
 
-  const handleSaveTemplate = () => {
+  const handleSaveTemplate = async () => {
     if (selectedTemplate) {
-      // Create updated template with current formFields (including renamed labels)
-      const updatedTemplate = {
-        ...selectedTemplate,
-        fields: formFields
-      };
-      saveTemplate(updatedTemplate, currentFieldPositions);
-      
-      // Reset to step 1
-      setStep(1);
-      setSelectedTemplate(null);
-      setFormFields([]);
-      setUploadedImageUrl(null);
-      setCurrentFieldPositions({});
+      try {
+        // Create updated template with current formFields (including renamed labels)
+        // Template already has the latest fieldPositions and imageData from single source of truth
+        const updatedTemplate = {
+          ...selectedTemplate,
+          fields: formFields
+        };
+        await saveTemplate(updatedTemplate);
+        
+        // Reset to step 1
+        setStep(1);
+        setSelectedTemplate(null);
+        setFormFields([]);
+      } catch (error) {
+        console.error('Failed to save template:', error);
+        // Error handling is done in the hook with toast notifications
+      }
     }
   };
 
@@ -113,7 +117,7 @@ const Index = () => {
                     fields={formFields} 
                     onSaveTemplate={isAdmin && selectedTemplate.type === 'custom' ? handleSaveTemplate : undefined}
                     isAdmin={isAdmin}
-                    onPositionsChange={handleFieldPositionsChange}
+                    onTemplateUpdate={handleTemplateUpdate}
                   />
                 </div>
               </div>}
@@ -143,7 +147,6 @@ const Index = () => {
               handleAdminLogin={handleAdminLogin}
               handleAdminLogout={handleAdminLogout}
               closeAdminDialog={closeAdminDialog}
-              onRecoverTemplates={recoverTemplates}
             />
           </div>
         </div>

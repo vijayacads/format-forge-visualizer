@@ -33,6 +33,11 @@ const TemplateRenderer = React.memo<TemplateRendererProps>(({
   // Memoize the filtered fields to prevent unnecessary re-renders
   const visibleFields = useMemo(() => {
     return fields.filter(field => {
+      // Always exclude the email field from preview
+      if (field.id === 'email') {
+        return false;
+      }
+      
       const value = getFieldValue(field.id);
       return value.trim().length > 0;
     });
@@ -46,7 +51,7 @@ const TemplateRenderer = React.memo<TemplateRendererProps>(({
     <div className="absolute inset-0">
       {visibleFields.map(field => {
         const value = getFieldValue(field.id);
-        const position = fieldPositions[field.id] || field.position || { 
+        const position = fieldPositions[field.id] || { 
           x: 100, 
           y: 100, 
           width: 250, 

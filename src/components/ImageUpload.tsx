@@ -5,10 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Upload, Image, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import OCRService, { DetectedField } from '@/services/ocrService';
+import { convertImageToBase64 } from '@/utils/imageUtils';
 
 interface ImageUploadProps {
-  onImageUploaded: (imageUrl: string) => void;
-  onFieldsDetected?: (fields: DetectedField[], imageUrl: string) => void;
+  onImageUploaded: (imageData: string) => void;
+  onFieldsDetected?: (fields: DetectedField[], imageData: string) => void;
 }
 
 const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) => {
@@ -28,16 +29,16 @@ const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) =>
     setIsDragging(false);
   };
 
-  const processImageWithOCR = async (imageUrl: string) => {
+  const processImageWithOCR = async (imageData: string) => {
     setIsProcessing(true);
     try {
       const ocrService = OCRService.getInstance();
-      const result = await ocrService.processImage(imageUrl);
+      const result = await ocrService.processImage(imageData);
       
       setDetectedFields(result.fields);
       
       if (onFieldsDetected) {
-        onFieldsDetected(result.fields, imageUrl);
+        onFieldsDetected(result.fields, imageData);
       }
 
       toast({
@@ -57,7 +58,7 @@ const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) =>
     }
   };
 
-  const processImage = (file: File) => {
+  const processImage = async (file: File) => {
     if (!file.type.match('image.*')) {
       toast({
         title: "Invalid file type",
@@ -78,13 +79,11 @@ const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) =>
 
     setIsUploading(true);
     
-    // Create a preview
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const result = e.target?.result as string;
-      setPreview(result);
-      onImageUploaded(result);
-      setIsUploading(false);
+    try {
+      // Convert image to base64 for persistent storage
+      const imageData = await convertImageToBase64(file);
+      setPreview(imageData);
+      onImageUploaded(imageData);
       
       toast({
         title: "Image uploaded",
@@ -93,9 +92,16 @@ const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) =>
       });
 
       // Process with OCR
-      await processImageWithOCR(result);
-    };
-    reader.readAsDataURL(file);
+      await processImageWithOCR(imageData);
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Failed to process the image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {

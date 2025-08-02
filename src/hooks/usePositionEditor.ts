@@ -18,11 +18,11 @@ interface Template {
 
 interface PositionEditorProps {
   isEditing: boolean;
-  onPositionsChange?: (positions: {[key: string]: Position}) => void;
+  template: Template;
+  onTemplateUpdate: (updatedTemplate: Template) => void;
 }
 
-export const usePositionEditor = ({ isEditing, onPositionsChange }: PositionEditorProps) => {
-  const [fieldPositions, setFieldPositions] = useState<{[key: string]: Position}>({});
+export const usePositionEditor = ({ isEditing, template, onTemplateUpdate }: PositionEditorProps) => {
   const [resizing, setResizing] = useState<{fieldId: string, handle: string} | null>(null);
 
   // Refs to store event listener functions for proper cleanup
@@ -56,30 +56,27 @@ export const usePositionEditor = ({ isEditing, onPositionsChange }: PositionEdit
     }
   }, [isEditing]);
 
-  // Initialize field positions
-  const initializePositions = (fields: Field[], template: Template) => {
-    if (fields.length > 0 && !Object.keys(fieldPositions).length) {
-      const initialPositions: {[key: string]: Position} = {};
-      fields.forEach(field => {
-        const savedPosition = template.fieldPositions?.[field.id];
-        const position = savedPosition || field.position || { x: 100, y: 100, width: 250, height: 40 };
-        initialPositions[field.id] = position;
-      });
-      setFieldPositions(initialPositions);
-    }
+  // Get current field positions from template
+  const getFieldPositions = () => {
+    return template.fieldPositions || {};
   };
 
-  // Handle field position updates
+  // Update field position in template (single source of truth)
   const updateFieldPosition = (fieldId: string, newPosition: Position) => {
-    const updatedPositions = {
-      ...fieldPositions,
-      [fieldId]: newPosition
+    const updatedTemplate = {
+      ...template,
+      fieldPositions: {
+        ...getFieldPositions(),
+        [fieldId]: newPosition
+      }
     };
-    setFieldPositions(updatedPositions);
-    
-    if (onPositionsChange) {
-      onPositionsChange(updatedPositions);
-    }
+    onTemplateUpdate(updatedTemplate);
+  };
+
+  // Get position for a specific field
+  const getFieldPosition = (fieldId: string): Position => {
+    const positions = getFieldPositions();
+    return positions[fieldId] || { x: 100, y: 100, width: 250, height: 40 };
   };
 
   // Handle mouse drag for positioning
@@ -89,7 +86,7 @@ export const usePositionEditor = ({ isEditing, onPositionsChange }: PositionEdit
     e.preventDefault();
     const startX = e.clientX;
     const startY = e.clientY;
-    const startPos = fieldPositions[fieldId] || { x: 0, y: 0, width: 250, height: 40 };
+    const startPos = getFieldPosition(fieldId);
     
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - startX;
@@ -101,27 +98,21 @@ export const usePositionEditor = ({ isEditing, onPositionsChange }: PositionEdit
         y: startPos.y + deltaY
       });
     };
-    
+
     const handleMouseUp = () => {
-      if (mouseMoveListenerRef.current) {
-        document.removeEventListener('mousemove', mouseMoveListenerRef.current);
-        mouseMoveListenerRef.current = null;
-      }
-      if (mouseUpListenerRef.current) {
-        document.removeEventListener('mouseup', mouseUpListenerRef.current);
-        mouseUpListenerRef.current = null;
-      }
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      mouseMoveListenerRef.current = null;
+      mouseUpListenerRef.current = null;
     };
-    
-    // Store references to the listener functions
-    mouseMoveListenerRef.current = handleMouseMove;
-    mouseUpListenerRef.current = handleMouseUp;
-    
+
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    mouseMoveListenerRef.current = handleMouseMove;
+    mouseUpListenerRef.current = handleMouseUp;
   };
 
-  // Handle resize functionality
+  // Handle resize start
   const handleResizeStart = (e: React.MouseEvent, fieldId: string, handle: string) => {
     if (!isEditing) return;
     
@@ -131,7 +122,7 @@ export const usePositionEditor = ({ isEditing, onPositionsChange }: PositionEdit
     
     const startX = e.clientX;
     const startY = e.clientY;
-    const startPos = fieldPositions[fieldId] || { x: 0, y: 0, width: 250, height: 40 };
+    const startPos = getFieldPosition(fieldId);
     
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - startX;
@@ -140,81 +131,90 @@ export const usePositionEditor = ({ isEditing, onPositionsChange }: PositionEdit
       const newPosition = calculateNewPosition(startPos, handle, deltaX, deltaY);
       updateFieldPosition(fieldId, newPosition);
     };
-    
+
     const handleMouseUp = () => {
-      if (mouseMoveListenerRef.current) {
-        document.removeEventListener('mousemove', mouseMoveListenerRef.current);
-        mouseMoveListenerRef.current = null;
-      }
-      if (mouseUpListenerRef.current) {
-        document.removeEventListener('mouseup', mouseUpListenerRef.current);
-        mouseUpListenerRef.current = null;
-      }
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      mouseMoveListenerRef.current = null;
+      mouseUpListenerRef.current = null;
       setResizing(null);
     };
-    
-    // Store references to the listener functions
-    mouseMoveListenerRef.current = handleMouseMove;
-    mouseUpListenerRef.current = handleMouseUp;
-    
+
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    mouseMoveListenerRef.current = handleMouseMove;
+    mouseUpListenerRef.current = handleMouseUp;
   };
 
-  // Helper function to calculate new position based on resize handle
+  // Calculate new position based on resize handle
   const calculateNewPosition = (startPos: Position, handle: string, deltaX: number, deltaY: number): Position => {
-    const newPosition = { ...startPos };
-    
-    // Handle different resize directions
     switch (handle) {
-      case 'nw': // top-left
-        newPosition.x = startPos.x + deltaX;
-        newPosition.y = startPos.y + deltaY;
-        newPosition.width = startPos.width - deltaX;
-        newPosition.height = startPos.height - deltaY;
-        break;
-      case 'ne': // top-right
-        newPosition.y = startPos.y + deltaY;
-        newPosition.width = startPos.width + deltaX;
-        newPosition.height = startPos.height - deltaY;
-        break;
-      case 'sw': // bottom-left
-        newPosition.x = startPos.x + deltaX;
-        newPosition.width = startPos.width - deltaX;
-        newPosition.height = startPos.height + deltaY;
-        break;
-      case 'se': // bottom-right
-        newPosition.width = startPos.width + deltaX;
-        newPosition.height = startPos.height + deltaY;
-        break;
-      case 'n': // top edge
-        newPosition.y = startPos.y + deltaY;
-        newPosition.height = startPos.height - deltaY;
-        break;
-      case 's': // bottom edge
-        newPosition.height = startPos.height + deltaY;
-        break;
-      case 'e': // right edge
-        newPosition.width = startPos.width + deltaX;
-        break;
-      case 'w': // left edge
-        newPosition.x = startPos.x + deltaX;
-        newPosition.width = startPos.width - deltaX;
-        break;
+      case 'nw':
+        return {
+          x: startPos.x + deltaX,
+          y: startPos.y + deltaY,
+          width: startPos.width - deltaX,
+          height: startPos.height - deltaY
+        };
+      case 'ne':
+        return {
+          x: startPos.x,
+          y: startPos.y + deltaY,
+          width: startPos.width + deltaX,
+          height: startPos.height - deltaY
+        };
+      case 'sw':
+        return {
+          x: startPos.x + deltaX,
+          y: startPos.y,
+          width: startPos.width - deltaX,
+          height: startPos.height + deltaY
+        };
+      case 'se':
+        return {
+          x: startPos.x,
+          y: startPos.y,
+          width: startPos.width + deltaX,
+          height: startPos.height + deltaY
+        };
+      case 'n':
+        return {
+          x: startPos.x,
+          y: startPos.y + deltaY,
+          width: startPos.width,
+          height: startPos.height - deltaY
+        };
+      case 's':
+        return {
+          x: startPos.x,
+          y: startPos.y,
+          width: startPos.width,
+          height: startPos.height + deltaY
+        };
+      case 'w':
+        return {
+          x: startPos.x + deltaX,
+          y: startPos.y,
+          width: startPos.width - deltaX,
+          height: startPos.height
+        };
+      case 'e':
+        return {
+          x: startPos.x,
+          y: startPos.y,
+          width: startPos.width + deltaX,
+          height: startPos.height
+        };
+      default:
+        return startPos;
     }
-    
-    // Ensure minimum size
-    newPosition.width = Math.max(newPosition.width, 100);
-    newPosition.height = Math.max(newPosition.height, 30);
-    
-    return newPosition;
   };
 
   return {
-    fieldPositions,
-    resizing,
-    initializePositions,
+    getFieldPositions,
+    getFieldPosition,
     handleMouseDown,
-    handleResizeStart
+    handleResizeStart,
+    resizing
   };
 }; 
