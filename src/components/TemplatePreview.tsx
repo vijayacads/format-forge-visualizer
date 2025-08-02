@@ -46,7 +46,10 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
   };
 
   const handleDownload = async () => {
-    if (!previewRef.current) return;
+    if (!previewRef.current) {
+      console.error('Preview ref not found');
+      return;
+    }
     
     // Validate email field before allowing download
     const emailField = fields.find(field => field.id === 'email');
@@ -71,19 +74,31 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
     }
     
     try {
-      // Save form data to database before generating PDF
-      const formData: { [key: string]: string } = {};
-      const emailValue = emailField.value.trim();
+      console.log('Starting PDF generation...');
+      console.log('Template:', template);
+      console.log('Fields:', fields);
+      console.log('Preview ref:', previewRef.current);
       
-      fields.forEach(field => {
-        if (field.value.trim() && field.id !== 'email') {
-          // Use field label as key instead of field ID for better readability
-          // Exclude email from form_data since it's stored as separate column
-          formData[field.label] = field.value;
-        }
-      });
-      
-      await supabaseService.createFormSubmission(template.id, emailValue, formData);
+      // Only save to database if NOT in admin mode and template has a valid UUID
+      if (!isAdmin && !template.id.startsWith('custom-')) {
+        // Save form data to database before generating PDF
+        const formData: { [key: string]: string } = {};
+        const emailValue = emailField.value.trim();
+        
+        fields.forEach(field => {
+          if (field.value.trim() && field.id !== 'email') {
+            // Use field label as key instead of field ID for better readability
+            // Exclude email from form_data since it's stored as separate column
+            formData[field.label] = field.value;
+          }
+        });
+        
+        console.log('Saving form data to database...');
+        await supabaseService.createFormSubmission(template.id, emailValue, formData);
+        console.log('Form data saved successfully');
+      } else {
+        console.log('Skipping database save - admin mode or temporary template');
+      }
       
       toast({
         title: "Preparing Download",
@@ -93,16 +108,22 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
       // Find the actual template content area (excluding UI elements)
       const templateContent = previewRef.current.querySelector('.relative') as HTMLElement;
       if (!templateContent) {
+        console.error('Template content not found in preview ref');
         throw new Error('Template content not found');
       }
+      
+      console.log('Template content found:', templateContent);
+      console.log('Image loaded state:', imageLoaded);
 
       const canvas = await html2canvas(templateContent, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        logging: false,
+        logging: true, // Enable logging to see what's happening
         backgroundColor: '#ffffff',
       });
+      
+      console.log('Canvas created successfully:', canvas.width, 'x', canvas.height);
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
@@ -110,6 +131,8 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
         unit: 'mm',
         format: 'a4',
       });
+      
+      console.log('PDF object created');
       
       if (pdfMode === 'single-page') {
         // Single page mode - scale to fit with minimal margins
@@ -187,6 +210,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
       const filename = `${template.name || 'document'}_${timestamp}.pdf`;
       
+      console.log('Saving PDF as:', filename);
       pdf.save(filename);
       
       toast({
@@ -196,7 +220,8 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
       });
       
     } catch (error) {
-      console.error('Download error:', error);
+      console.error('Download error details:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       toast({
         title: "Download Failed",
         description: "There was an error creating your PDF. Please try again.",
@@ -307,6 +332,15 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
             </select>
           </div>
         </div>
+        {/* Save Template Button for Admin */}
+        {isAdmin && onSaveTemplate && (
+          <Button
+            onClick={onSaveTemplate}
+            className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+          >
+            Save Template
+          </Button>
+        )}
         {(() => {
           const emailField = fields.find(field => field.id === 'email');
           const emailValue = emailField?.value?.trim() || '';

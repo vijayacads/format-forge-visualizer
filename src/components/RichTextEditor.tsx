@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
+// Register custom font sizes for React Quill
+const Quill = ReactQuill.Quill;
+const Size = Quill.import('attributors/style/size');
+Size.whitelist = ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'];
+Quill.register(Size, true);
+
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -19,11 +25,6 @@ const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) =
     setEditorValue(content);
     onChange(content);
   };
-
-  // Custom font size handler
-  const Size = ReactQuill.Quill.import('attributors/style/size');
-  Size.whitelist = ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'];
-  ReactQuill.Quill.register(Size, true);
 
   // Quill modules to attach to editor
   const modules = {
