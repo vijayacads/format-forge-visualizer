@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Template, FormField } from '@/types';
 import ImageUpload from '@/components/ImageUpload';
 import TemplateSelector from '@/components/TemplateSelector';
@@ -9,15 +9,73 @@ import { Button } from '@/components/ui/button';
 import { useSupabaseTemplateManagement } from '@/hooks/useSupabaseTemplateManagement';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useTemplateWorkflow } from '@/hooks/useTemplateWorkflow';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from '@/components/ui/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { DetectedField } from '@/services/ocrService';
+import { migrateLocalStorageTemplates } from '@/utils/migrationUtils';
 
 const Index = () => {
   const [step, setStep] = useState<number>(1);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [formFields, setFormFields] = useState<FormField[]>([]);
+  const [detectedFields, setDetectedFields] = useState<DetectedField[]>([]);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [adminPassword, setAdminPassword] = useState<string>('');
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState<boolean>(false);
+  const [savedTemplates, setSavedTemplates] = useState<Template[]>([]);
+  const [currentFieldPositions, setCurrentFieldPositions] = useState<{[key: string]: {x: number, y: number, width: number, height: number}}>({});
+  const [currentSectionTitles, setCurrentSectionTitles] = useState<{[key: string]: string}>({});
+
+  const {
+    toast
+  } = useToast();
+
+  // Load saved templates from localStorage on component mount
+  useEffect(() => {
+    // Run migration first
+    migrateLocalStorageTemplates();
+    
+    const saved = localStorage.getItem('savedTemplates');
+    console.log('Loading saved templates from localStorage:', saved);
+    if (saved) {
+      try {
+        const parsedTemplates = JSON.parse(saved);
+        console.log('Parsed templates:', parsedTemplates);
+        if (parsedTemplates.length > 0) {
+          // Ensure all templates have the new sectionTitles property
+          const validatedTemplates = parsedTemplates.map((template: any) => ({
+            ...template,
+            sectionTitles: template.sectionTitles || {},
+            fieldPositions: template.fieldPositions || {}
+          }));
+          setSavedTemplates(validatedTemplates);
+          console.log('Successfully loaded templates:', validatedTemplates.length);
+        } else {
+          console.log('No templates found in localStorage');
+        }
+      } catch (error) {
+        console.error('Error loading saved templates:', error);
+        console.error('Raw localStorage data:', saved);
+        // If there's an error, try to clear the corrupted localStorage
+        localStorage.removeItem('savedTemplates');
+        toast({
+          title: "Template Recovery",
+          description: "There was an issue loading your saved templates. They have been reset.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      console.log('No saved templates found in localStorage');
+    }
+  }, []);
 
   // Custom hooks for different concerns
   const { 
-    savedTemplates, 
+    savedTemplates: supabaseSavedTemplates, 
     saveTemplate, 
     deleteTemplate, 
     renameTemplate, 
@@ -27,12 +85,12 @@ const Index = () => {
   } = useSupabaseTemplateManagement();
   
   const { 
-    isAdmin,
-    adminPassword,
-    setAdminPassword,
-    handleAdminLogin,
-    handleAdminLogout,
-    closeAdminDialog
+    isAdmin: isSupabaseAdmin,
+    adminPassword: supabaseAdminPassword,
+    setAdminPassword: setSupabaseAdminPassword,
+    handleAdminLogin: handleSupabaseAdminLogin,
+    handleAdminLogout: handleSupabaseAdminLogout,
+    closeAdminDialog: closeSupabaseAdminDialog
   } = useAdminAuth();
   
   const { handleImageUploaded, handleFieldsDetected, handleSelectTemplate } = useTemplateWorkflow(
@@ -144,9 +202,9 @@ const Index = () => {
               isAdmin={isAdmin}
               adminPassword={adminPassword}
               setAdminPassword={setAdminPassword}
-              handleAdminLogin={handleAdminLogin}
-              handleAdminLogout={handleAdminLogout}
-              closeAdminDialog={closeAdminDialog}
+              handleAdminLogin={() => setIsAdminDialogOpen(true)}
+              handleAdminLogout={() => setIsAdminDialogOpen(true)}
+              closeAdminDialog={() => setIsAdminDialogOpen(false)}
             />
           </div>
         </div>

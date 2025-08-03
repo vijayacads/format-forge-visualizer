@@ -1,11 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-
-interface Position {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+import { Position } from '@/types';
+import { getEffectivePosition, pixelsToPercentages } from '@/utils/positionUtils';
 
 interface Field {
   id: string;
@@ -20,9 +15,17 @@ interface PositionEditorProps {
   isEditing: boolean;
   template: Template;
   onTemplateUpdate: (updatedTemplate: Template) => void;
+  containerWidth?: number;
+  containerHeight?: number;
 }
 
-export const usePositionEditor = ({ isEditing, template, onTemplateUpdate }: PositionEditorProps) => {
+export const usePositionEditor = ({ 
+  isEditing, 
+  template, 
+  onTemplateUpdate,
+  containerWidth = 800, // Default fallback
+  containerHeight = 600  // Default fallback
+}: PositionEditorProps) => {
   const [resizing, setResizing] = useState<{fieldId: string, handle: string} | null>(null);
 
   // Refs to store event listener functions for proper cleanup
@@ -73,13 +76,16 @@ export const usePositionEditor = ({ isEditing, template, onTemplateUpdate }: Pos
     onTemplateUpdate(updatedTemplate);
   };
 
-  // Get position for a specific field
+  // Get position for a specific field with percentage support
   const getFieldPosition = (fieldId: string): Position => {
     const positions = getFieldPositions();
-    return positions[fieldId] || { x: 100, y: 100, width: 250, height: 40 };
+    const position = positions[fieldId] || { x: 100, y: 100, width: 250, height: 40 };
+    
+    // Return effective position for rendering
+    return getEffectivePosition(position, containerWidth, containerHeight);
   };
 
-  // Handle mouse drag for positioning
+  // Handle mouse drag for positioning with percentage conversion
   const handleMouseDown = (e: React.MouseEvent, fieldId: string) => {
     if (!isEditing || resizing) return;
     
@@ -92,11 +98,21 @@ export const usePositionEditor = ({ isEditing, template, onTemplateUpdate }: Pos
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
       
-      updateFieldPosition(fieldId, {
+      // Calculate new pixel position
+      const newPixelPosition = {
         ...startPos,
         x: startPos.x + deltaX,
         y: startPos.y + deltaY
-      });
+      };
+      
+      // Convert to percentage-based position
+      const newPercentagePosition = pixelsToPercentages(
+        newPixelPosition, 
+        containerWidth, 
+        containerHeight
+      );
+      
+      updateFieldPosition(fieldId, newPercentagePosition);
     };
 
     const handleMouseUp = () => {
@@ -112,7 +128,7 @@ export const usePositionEditor = ({ isEditing, template, onTemplateUpdate }: Pos
     mouseUpListenerRef.current = handleMouseUp;
   };
 
-  // Handle resize start
+  // Handle resize start with percentage conversion
   const handleResizeStart = (e: React.MouseEvent, fieldId: string, handle: string) => {
     if (!isEditing) return;
     
@@ -128,8 +144,17 @@ export const usePositionEditor = ({ isEditing, template, onTemplateUpdate }: Pos
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
       
-      const newPosition = calculateNewPosition(startPos, handle, deltaX, deltaY);
-      updateFieldPosition(fieldId, newPosition);
+      // Calculate new pixel position
+      const newPixelPosition = calculateNewPosition(startPos, handle, deltaX, deltaY);
+      
+      // Convert to percentage-based position
+      const newPercentagePosition = pixelsToPercentages(
+        newPixelPosition, 
+        containerWidth, 
+        containerHeight
+      );
+      
+      updateFieldPosition(fieldId, newPercentagePosition);
     };
 
     const handleMouseUp = () => {

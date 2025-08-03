@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { FormField, Template } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -23,21 +23,53 @@ interface TemplatePreviewProps {
 
 const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, onTemplateUpdate }: TemplatePreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [pdfMode, setPdfMode] = React.useState<'multi-page' | 'single-page'>('multi-page');
   const [imageRef, setImageRef] = React.useState<HTMLImageElement | null>(null);
   const [imageLoaded, setImageLoaded] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
+  const [containerDimensions, setContainerDimensions] = useState({ width: 800, height: 600 });
 
-  // Use the position editor hook with single source of truth
+  // Track container dimensions for percentage-based positioning
+  useEffect(() => {
+    const updateContainerDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerDimensions({
+          width: rect.width,
+          height: rect.height
+        });
+      }
+    };
+
+    // Update dimensions on mount and window resize
+    updateContainerDimensions();
+    window.addEventListener('resize', updateContainerDimensions);
+    
+    // Also update when image loads
+    if (imageLoaded) {
+      updateContainerDimensions();
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateContainerDimensions);
+    };
+  }, [imageLoaded]);
+
+  // Use the position editor hook with container dimensions
   const {
     getFieldPositions,
+    getFieldPosition,
     handleMouseDown,
-    handleResizeStart
+    handleResizeStart,
+    resizing
   } = usePositionEditor({
     isEditing,
     template,
-    onTemplateUpdate: onTemplateUpdate || (() => {})
+    onTemplateUpdate: onTemplateUpdate || (() => {}),
+    containerWidth: containerDimensions.width,
+    containerHeight: containerDimensions.height
   });
 
   const getFieldValue = (id: string) => {
@@ -106,9 +138,9 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
       });
 
       // Find the actual template content area (excluding UI elements)
-      const templateContent = previewRef.current.querySelector('.relative') as HTMLElement;
+      const templateContent = containerRef.current as HTMLElement;
       if (!templateContent) {
-        console.error('Template content not found in preview ref');
+        console.error('Template content not found in container ref');
         throw new Error('Template content not found');
       }
       
@@ -256,7 +288,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
           )}
         </div>
 
-        <div className="relative w-full" ref={previewRef}>
+        <div className="relative w-full" ref={containerRef}>
           <img
             ref={setImageRef}
             src={imageSource}

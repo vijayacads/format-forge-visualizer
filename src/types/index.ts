@@ -44,3 +44,15 @@ export interface FormSubmission {
   form_data: FormData;
   created_at: string;
 }
+
+export interface Position {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  // Add percentage-based positioning support
+  xPercent?: number;
+  yPercent?: number;
+  widthPercent?: number;
+  heightPercent?: number;
+}
