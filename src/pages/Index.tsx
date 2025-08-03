@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DetectedField } from '@/services/ocrService';
 import { migrateLocalStorageTemplates } from '@/utils/migrationUtils';
+import { restoreSTEMTemplate } from '@/utils/restoreSTEMTemplate';
 
 const Index = () => {
   const [step, setStep] = useState<number>(1);
@@ -132,6 +133,69 @@ const Index = () => {
     }
   };
 
+  const handleRecoverTemplates = () => {
+    const saved = localStorage.getItem('savedTemplates');
+    console.log('Manual recovery - localStorage data:', saved);
+    
+    if (saved) {
+      try {
+        const parsedTemplates = JSON.parse(saved);
+        console.log('Manual recovery - parsed templates:', parsedTemplates);
+        
+        if (parsedTemplates.length > 0) {
+          const validatedTemplates = parsedTemplates.map((template: any) => ({
+            ...template,
+            sectionTitles: template.sectionTitles || {},
+            fieldPositions: template.fieldPositions || {}
+          }));
+          setSavedTemplates(validatedTemplates);
+          toast({
+            title: "Templates Recovered",
+            description: `Successfully recovered ${validatedTemplates.length} templates.`,
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "No Templates Found",
+            description: "No templates found in localStorage.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Manual recovery error:', error);
+        toast({
+          title: "Recovery Failed",
+          description: "Could not recover templates from localStorage.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "No Data Found",
+        description: "No template data found in localStorage.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRestoreSTEMTemplate = () => {
+    try {
+      restoreSTEMTemplate();
+      toast({
+        title: "STEM Template Restored",
+        description: "STEM Curiosity template has been restored with percentage-based positioning.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error restoring STEM template:', error);
+      toast({
+        title: "Restoration Failed",
+        description: "Could not restore STEM Curiosity template.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const renderStep = () => {
     switch (step) {
       case 1:
@@ -144,6 +208,25 @@ const Index = () => {
                     onImageUploaded={handleImageUploaded} 
                     onFieldsDetected={handleFieldsDetected}
                   />
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <h3 className="text-lg font-medium mb-2">Template Management</h3>
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleRecoverTemplates}
+                      >
+                        Recover Templates
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleRestoreSTEMTemplate}
+                      >
+                        Restore STEM Template
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
               <div className="flex flex-col">
