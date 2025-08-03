@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,19 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   handleAdminLogout,
   closeAdminDialog
 }) => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleLogin = () => {
+    handleAdminLogin();
+    setIsDialogOpen(false);
+  };
+
+  const handleCancel = () => {
+    setAdminPassword('');
+    setIsDialogOpen(false);
+    closeAdminDialog();
+  };
+
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
       {isAdmin ? (
@@ -31,7 +44,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
           </Button>
         </div>
       ) : (
-        <AlertDialog>
+        <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <AlertDialogTrigger asChild>
             <Button variant="outline" size="sm">
               Admin
@@ -51,13 +64,14 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                 type="password"
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                 placeholder="Enter admin password"
+                autoFocus
               />
             </div>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={closeAdminDialog}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleAdminLogin}>Login</AlertDialogAction>
+              <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleLogin}>Login</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

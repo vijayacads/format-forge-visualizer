@@ -196,6 +196,39 @@ const Index = () => {
     }
   };
 
+  // Admin authentication handlers
+  const handleAdminLogin = () => {
+    // Simple admin password check - you can change this password
+    const correctPassword = 'admin123'; // Change this to your desired password
+    
+    if (adminPassword === correctPassword) {
+      setIsAdmin(true);
+      setAdminPassword('');
+      setIsAdminDialogOpen(false);
+      toast({
+        title: "Admin Access Granted",
+        description: "You are now in admin mode.",
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: "Access Denied",
+        description: "Incorrect admin password.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    setAdminPassword('');
+    toast({
+      title: "Admin Logout",
+      description: "You have been logged out of admin mode.",
+      variant: "default",
+    });
+  };
+
   const renderStep = () => {
     switch (step) {
       case 1:
@@ -285,8 +318,8 @@ const Index = () => {
               isAdmin={isAdmin}
               adminPassword={adminPassword}
               setAdminPassword={setAdminPassword}
-              handleAdminLogin={() => setIsAdminDialogOpen(true)}
-              handleAdminLogout={() => setIsAdminDialogOpen(true)}
+              handleAdminLogin={handleAdminLogin}
+              handleAdminLogout={handleAdminLogout}
               closeAdminDialog={() => setIsAdminDialogOpen(false)}
             />
           </div>
