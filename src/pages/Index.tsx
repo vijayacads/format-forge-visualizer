@@ -16,9 +16,10 @@ const Index = () => {
   const [formFields, setFormFields] = useState<FormField[]>([]);
 
   // Custom hooks for different concerns
-  const { 
+  const {
     savedTemplates, 
     saveTemplate, 
+    updateTemplate,
     deleteTemplate, 
     renameTemplate, 
     reorderTemplates,
@@ -47,21 +48,22 @@ const Index = () => {
     setFormFields(fields);
   };
 
-  // Update template when positions change (single source of truth)
+  // Simple template update - direct state update
   const handleTemplateUpdate = (updatedTemplate: Template) => {
     setSelectedTemplate(updatedTemplate);
   };
 
-  const handleSaveTemplate = async () => {
+  // Simple Save As - Create new template
+  const handleSaveAsTemplate = async () => {
     if (selectedTemplate) {
       try {
-        // Create updated template with current formFields (including renamed labels)
-        // Template already has the latest fieldPositions and imageData from single source of truth
-        const updatedTemplate = {
+        // Create new template with current data
+        const newTemplate = {
           ...selectedTemplate,
           fields: formFields
         };
-        await saveTemplate(updatedTemplate);
+        
+        await saveTemplate(newTemplate);
         
         // Reset to step 1
         setStep(1);
@@ -69,7 +71,26 @@ const Index = () => {
         setFormFields([]);
       } catch (error) {
         console.error('Failed to save template:', error);
-        // Error handling is done in the hook with toast notifications
+      }
+    }
+  };
+
+  // Simple Save - Update existing template
+  const handleSaveTemplate = async () => {
+    if (selectedTemplate) {
+      try {
+        // Update existing template with current data
+        const updatedTemplate = {
+          ...selectedTemplate,
+          fields: formFields
+        };
+        
+        await updateTemplate(updatedTemplate);
+        
+        // Update local state with the updated template
+        setSelectedTemplate(updatedTemplate);
+      } catch (error) {
+        console.error('Failed to update template:', error);
       }
     }
   };
@@ -115,7 +136,8 @@ const Index = () => {
                   <TemplatePreview 
                     template={selectedTemplate} 
                     fields={formFields} 
-                    onSaveTemplate={isAdmin && selectedTemplate.type === 'custom' ? handleSaveTemplate : undefined}
+                    onSaveTemplate={isAdmin ? handleSaveTemplate : undefined}
+                    onSaveAsTemplate={isAdmin && selectedTemplate.type === 'custom' ? handleSaveAsTemplate : undefined}
                     isAdmin={isAdmin}
                     onTemplateUpdate={handleTemplateUpdate}
                   />

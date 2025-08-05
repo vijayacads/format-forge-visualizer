@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS templates (
   field_positions JSONB,
   image_url TEXT,
   image_data TEXT,
+  image_width INTEGER,
+  image_height INTEGER,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_by TEXT,

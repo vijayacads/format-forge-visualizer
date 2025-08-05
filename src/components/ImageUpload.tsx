@@ -9,7 +9,7 @@ import { convertImageToBase64 } from '@/utils/imageUtils';
 
 interface ImageUploadProps {
   onImageUploaded: (imageData: string) => void;
-  onFieldsDetected?: (fields: DetectedField[], imageData: string) => void;
+  onFieldsDetected?: (fields: DetectedField[], imageData: string, imageWidth?: number, imageHeight?: number) => void;
 }
 
 const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) => {
@@ -38,7 +38,12 @@ const ImageUpload = ({ onImageUploaded, onFieldsDetected }: ImageUploadProps) =>
       setDetectedFields(result.fields);
       
       if (onFieldsDetected) {
-        onFieldsDetected(result.fields, imageData);
+        // Get image dimensions from the uploaded image
+        const img = document.createElement('img');
+        img.onload = () => {
+          onFieldsDetected(result.fields, imageData, img.width, img.height);
+        };
+        img.src = imageData;
       }
 
       toast({

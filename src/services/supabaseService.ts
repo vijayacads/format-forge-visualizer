@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Template, FormField, FormData, FormSubmission } from '@/types';
+import { convertFieldPositionsToPercentages, convertFieldPositionsToPixels, PercentagePosition } from '@/utils/positionUtils';
 
 export interface SupabaseTemplate {
   id: string
@@ -9,6 +10,8 @@ export interface SupabaseTemplate {
   field_positions: Record<string, { x: number; y: number; width: number; height: number }>
   image_url: string | null
   image_data: string | null
+  image_width: number | null
+  image_height: number | null
   created_at: string
   updated_at: string
   created_by: string | null
@@ -43,7 +46,7 @@ class SupabaseService {
 
       if (error) throw error
 
-      return data?.map(this.mapSupabaseToTemplate) || []
+      return data ? data.map(item => this.mapSupabaseToTemplate(item)) : []
     } catch (error) {
       console.error('Error fetching templates:', error)
       throw error
@@ -103,15 +106,22 @@ class SupabaseService {
 
   async createTemplate(template: Omit<Template, 'id'>): Promise<Template> {
     try {
+      // Convert pixel positions to percentages for storage
+      const percentagePositions = template.fieldPositions && template.imageWidth && template.imageHeight
+        ? convertFieldPositionsToPercentages(template.fieldPositions, template.imageWidth, template.imageHeight)
+        : template.fieldPositions;
+
       const { data, error } = await supabase
         .from('templates')
         .insert({
           name: template.name,
           type: template.type,
           fields: template.fields,
-          field_positions: template.fieldPositions,
+          field_positions: percentagePositions,
           image_url: template.imageUrl,
           image_data: template.imageData,
+          image_width: template.imageWidth,
+          image_height: template.imageHeight,
           is_public: template.isPublic || false
         })
         .select()
@@ -133,9 +143,36 @@ class SupabaseService {
       if (updates.name !== undefined) updateData.name = updates.name
       if (updates.type !== undefined) updateData.type = updates.type
       if (updates.fields !== undefined) updateData.fields = updates.fields
-      if (updates.fieldPositions !== undefined) updateData.field_positions = updates.fieldPositions
+      if (updates.fieldPositions !== undefined) {
+        // Check if positions are already percentages (from database)
+        const firstPosition = Object.values(updates.fieldPositions)[0];
+        const isAlreadyPercentage = firstPosition && 
+                                   firstPosition.x >= 0 && firstPosition.x <= 100 && 
+                                   firstPosition.y >= -100 && firstPosition.y <= 100 && 
+                                   firstPosition.width > 0 && firstPosition.width <= 100 && 
+                                   firstPosition.height > 0 && firstPosition.height <= 100;
+        
+        if (isAlreadyPercentage) {
+          // Positions are already percentages, use them directly
+          updateData.field_positions = updates.fieldPositions;
+        } else {
+          // Positions are pixels, convert to percentages
+          const imageWidth = updates.imageWidth;
+          const imageHeight = updates.imageHeight;
+          
+          if (imageWidth && imageHeight) {
+            const percentagePositions = convertFieldPositionsToPercentages(updates.fieldPositions, imageWidth, imageHeight);
+            updateData.field_positions = percentagePositions;
+          } else {
+            // Fallback to original positions if no image dimensions
+            updateData.field_positions = updates.fieldPositions;
+          }
+        }
+      }
       if (updates.imageUrl !== undefined) updateData.image_url = updates.imageUrl
       if (updates.imageData !== undefined) updateData.image_data = updates.imageData
+      if (updates.imageWidth !== undefined) updateData.image_width = updates.imageWidth
+      if (updates.imageHeight !== undefined) updateData.image_height = updates.imageHeight
       if (updates.isPublic !== undefined) updateData.is_public = updates.isPublic
 
       const { data, error } = await supabase
@@ -344,6 +381,8 @@ class SupabaseService {
       layout: { sections: [] }, // Default empty layout
       imageUrl: data.image_url || null,
       imageData: data.image_data || null,
+      imageWidth: data.image_width || undefined,
+      imageHeight: data.image_height || undefined,
       isPublic: data.is_public
     }
   }

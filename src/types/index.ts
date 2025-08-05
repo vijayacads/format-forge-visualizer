@@ -19,6 +19,8 @@ export interface Template {
   layout?: { sections: TemplateSection[] };
   imageUrl?: string | null;
   imageData?: string | null;
+  imageWidth?: number;  // Store original image width
+  imageHeight?: number; // Store original image height
   isPublic?: boolean;
 }
 

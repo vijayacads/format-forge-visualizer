@@ -21,15 +21,14 @@ const FieldOverlay: React.FC<FieldOverlayProps> = ({
 }) => {
   const isHeaderField = field.id === 'name' || field.id === 'email';
   const overlayClass = isHeaderField 
-    ? `absolute px-1 py-0.5 rounded ${isEditing ? 'bg-yellow-100 bg-opacity-30 cursor-move' : ''}`
-    : `absolute px-1 py-0.5 rounded ${isEditing ? 'bg-blue-100 bg-opacity-20 cursor-move' : ''}`;
+    ? `absolute rounded ${isEditing ? 'bg-yellow-100 bg-opacity-30 cursor-move' : ''}`
+    : `absolute rounded ${isEditing ? 'bg-blue-100 bg-opacity-20 cursor-move' : ''}`;
 
   return (
     <div 
       className={overlayClass}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
+        transform: `translate(${position.x}px, ${position.y}px)`,
         width: `${position.width}px`,
         minHeight: `${position.height}px`,
         zIndex: 10
@@ -38,13 +37,25 @@ const FieldOverlay: React.FC<FieldOverlayProps> = ({
     >
       {field.type === 'richtext' ? (
         <div 
-          className={`text-sm text-gray-900 ql-editor ${isHeaderField ? '' : 'text-sm'}`}
+          className="text-gray-900 ql-editor leading-tight text-sm"
+          style={{ 
+            lineHeight: '1.2', 
+            margin: 0, 
+            padding: 0
+          }}
           dangerouslySetInnerHTML={{
             __html: value || '<span class="text-gray-400 italic">No content added yet</span>'
           }}
         />
       ) : (
-        <div className={`text-gray-900 ${isHeaderField ? 'text-sm' : 'text-sm'} whitespace-pre-wrap`}>
+        <div 
+          className="text-gray-900 whitespace-pre-wrap leading-tight text-sm"
+          style={{ 
+            lineHeight: '1.2', 
+            margin: 0, 
+            padding: 0
+          }}
+        >
           {value}
         </div>
       )}

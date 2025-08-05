@@ -57,6 +57,32 @@ export const useSupabaseTemplateManagement = () => {
     }
   }
 
+  const updateTemplate = async (template: Template) => {
+    try {
+      const updatedTemplate = await supabaseService.updateTemplate(template.id, template)
+      
+      setSavedTemplates(prev => prev.map(t => 
+        t.id === template.id ? updatedTemplate : t
+      ))
+      
+      toast({
+        title: "Template Updated",
+        description: "Your template has been updated in the cloud database.",
+        variant: "default",
+      })
+      
+      return updatedTemplate
+    } catch (err) {
+      console.error('Error updating template:', err)
+      toast({
+        title: "Error",
+        description: "Failed to update template in database.",
+        variant: "destructive",
+      })
+      throw err
+    }
+  }
+
   const deleteTemplate = async (templateId: string) => {
     try {
       await supabaseService.deleteTemplate(templateId)
@@ -200,6 +226,7 @@ export const useSupabaseTemplateManagement = () => {
     error,
     loadTemplates,
     saveTemplate,
+    updateTemplate,
     deleteTemplate,
     renameTemplate,
     reorderTemplates,

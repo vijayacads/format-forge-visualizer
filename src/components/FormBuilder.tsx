@@ -100,30 +100,30 @@ const FormBuilder = React.memo(({
     switch (field.type) {
       case 'textarea':
         return (
-          <Textarea 
-            id={field.id} 
-            value={field.value} 
+            <Textarea 
+              id={field.id} 
+              value={field.value} 
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            placeholder={placeholder}
+              placeholder={placeholder} 
             className="min-h-[100px]"
           />
         );
       case 'richtext':
         return (
-          <RichTextEditor
-            value={field.value}
+            <RichTextEditor
+              value={field.value}
             onChange={(value) => handleFieldChange(field.id, value)}
-            placeholder={placeholder}
-          />
+              placeholder={placeholder}
+            />
         );
       default:
         return (
-          <Input 
-            id={field.id} 
-            value={field.value} 
+            <Input 
+              id={field.id} 
+              value={field.value} 
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            placeholder={placeholder}
-          />
+              placeholder={placeholder}
+            />
         );
     }
   }, [handleFieldChange]);
@@ -170,7 +170,7 @@ const FormBuilder = React.memo(({
                         Required
                       </span>
                     )}
-                  </div>
+                    </div>
                   {isAdmin && field.id !== 'email' && (
                     <Button
                       variant="ghost"
@@ -182,13 +182,13 @@ const FormBuilder = React.memo(({
                     </Button>
                   )}
                 </div>
-              </AccordionTrigger>
-              <AccordionContent>
+                </AccordionTrigger>
+                <AccordionContent>
                 {renderField(field)}
-              </AccordionContent>
+                </AccordionContent>
             </AccordionItem>
           ))}
-        </Accordion>
+          </Accordion>
         
         {isAdmin && (
           <Button 

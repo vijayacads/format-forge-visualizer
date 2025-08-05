@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { FormField, Template } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -11,39 +11,116 @@ import { jsPDF } from 'jspdf';
 import { usePositionEditor } from '@/hooks/usePositionEditor';
 import TemplateRenderer from './TemplateRenderer';
 import { getImageSource } from '@/utils/imageUtils';
+import { convertFieldPositionsToPixels, PercentagePosition } from '@/utils/positionUtils';
 import { supabaseService } from '@/services/supabaseService';
 
 interface TemplatePreviewProps {
   template: Template;
   fields: FormField[];
   onSaveTemplate?: () => void;
+  onSaveAsTemplate?: () => void;
   isAdmin?: boolean;
   onTemplateUpdate?: (updatedTemplate: Template) => void;
 }
 
-const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, onTemplateUpdate }: TemplatePreviewProps) => {
+const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, isAdmin = false, onTemplateUpdate }: TemplatePreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const [pdfMode, setPdfMode] = React.useState<'multi-page' | 'single-page'>('multi-page');
-  const [imageRef, setImageRef] = React.useState<HTMLImageElement | null>(null);
-  const [imageLoaded, setImageLoaded] = React.useState(false);
-  const [isEditing, setIsEditing] = React.useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [pdfMode, setPdfMode] = useState<'single-page' | 'multi-page'>('single-page');
+  const [imageRef, setImageRef] = useState<HTMLImageElement | null>(null);
+  const [currentTemplate, setCurrentTemplate] = useState<Template>(template);
+  const [forceUpdate, setForceUpdate] = useState(0);
 
-  // Use the position editor hook with single source of truth
+  // Force re-calculation when image size changes (viewport resize, mobile toggle, etc.)
+  useEffect(() => {
+    const handleResize = () => {
+      setForceUpdate(prev => prev + 1);
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    // Also listen for orientation changes and other viewport changes
+    window.addEventListener('orientationchange', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
+
+  // Sync currentTemplate with template prop changes
+  useEffect(() => {
+    setCurrentTemplate(template);
+  }, [template]);
+
+  const getFieldValue = (id: string) => {
+    const field = fields.find(f => f.id === id);
+    return field?.value || '';
+  };
+
+  // Convert percentage positions to pixels for display
+  const getDisplayPositions = () => {
+    // Force recalculation when viewport changes
+    const _ = forceUpdate; // This makes the function depend on forceUpdate
+    
+    // Use currentTemplate for display to get the latest positions
+    const positions = currentTemplate.fieldPositions || {};
+    
+    // Check if positions are percentages (from database) or pixels (legacy/OCR)
+    if (Object.keys(positions).length > 0) {
+      const firstPosition = Object.values(positions)[0];
+      
+      // Simple percentage detection: check if values are in percentage range
+      const isPercentage = firstPosition.x >= 0 && firstPosition.x <= 100 && 
+                          firstPosition.y >= -100 && firstPosition.y <= 100 && 
+                          firstPosition.width > 0 && firstPosition.width <= 100 && 
+                          firstPosition.height > 0 && firstPosition.height <= 100;
+      
+      if (isPercentage && template.imageWidth && template.imageHeight) {
+        // Use actual displayed image size for position calculation
+        const displayWidth = imageRef?.offsetWidth || template.imageWidth;
+        const displayHeight = imageRef?.offsetHeight || template.imageHeight;
+        
+        // Debug: Check image dimensions
+        console.log('Position calculation debug:', {
+          storedWidth: template.imageWidth,
+          storedHeight: template.imageHeight,
+          displayWidth,
+          displayHeight,
+          actualImageWidth: imageRef?.naturalWidth,
+          actualImageHeight: imageRef?.naturalHeight,
+          firstPosition
+        });
+        
+        // Convert percentages to pixels using DISPLAYED image dimensions
+        const pixelPositions = convertFieldPositionsToPixels(
+          positions,
+          displayWidth,
+          displayHeight
+        );
+        
+        return pixelPositions;
+      }
+    }
+    
+    return positions;
+  };
+
+  // Use the position editor hook with currentTemplate
   const {
     getFieldPositions,
     handleMouseDown,
     handleResizeStart
   } = usePositionEditor({
     isEditing,
-    template,
-    onTemplateUpdate: onTemplateUpdate || (() => {})
+    template: currentTemplate, // Use currentTemplate for position editor
+    onTemplateUpdate: (updatedTemplate: any) => {
+      setCurrentTemplate(updatedTemplate as Template); // Update local state
+      onTemplateUpdate?.(updatedTemplate as Template); // Call parent callback
+    }
   });
-
-  const getFieldValue = (id: string) => {
-    const field = fields.find(f => f.id === id);
-    return field ? field.value : '';
-  };
 
   const handleDownload = async () => {
     if (!previewRef.current) {
@@ -76,6 +153,8 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
     try {
       console.log('Starting PDF generation...');
       console.log('Template:', template);
+      console.log('Template imageWidth:', template.imageWidth);
+      console.log('Template imageHeight:', template.imageHeight);
       console.log('Fields:', fields);
       console.log('Preview ref:', previewRef.current);
       
@@ -116,16 +195,23 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
       console.log('Image loaded state:', imageLoaded);
 
       const canvas = await html2canvas(templateContent, {
-        scale: 2,
+        scale: 5, // Increased from 2 to 5 for higher quality (2.5x increase)
         useCORS: true,
         allowTaint: true,
-        logging: true, // Enable logging to see what's happening
+        logging: false, // Disabled logging to reduce processing
         backgroundColor: '#ffffff',
+        ignoreElements: (element) => {
+          // Ignore resize handles and editing UI elements
+          return element.classList.contains('resize-handle') || 
+                 element.classList.contains('resize-handles') ||
+                 element.classList.contains('editing-ui');
+        }
       });
       
       console.log('Canvas created successfully:', canvas.width, 'x', canvas.height);
 
-      const imgData = canvas.toDataURL('image/png');
+      // High quality image data for better PDF quality
+      const imgData = canvas.toDataURL('image/jpeg', 0.95); // Increased quality from 0.8 to 0.95
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -148,7 +234,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
         
         if (imgHeight <= contentHeight) {
           // Content fits on one page
-          pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+          pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight);
         } else {
           // Scale down to fit
           const scale = contentHeight / imgHeight;
@@ -191,10 +277,10 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
             );
           }
           
-          const pageImgData = pageCanvas.toDataURL('image/png');
+          const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.95);
           const pageImgHeight = (sourceHeight * imgWidth) / canvas.width;
           
-          pdf.addImage(pageImgData, 'PNG', margin, margin, imgWidth, pageImgHeight);
+          pdf.addImage(pageImgData, 'JPEG', margin, margin, imgWidth, pageImgHeight);
           
           remainingHeight -= contentHeight;
           currentY += contentHeight;
@@ -261,16 +347,15 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
             ref={setImageRef}
             src={imageSource}
             alt="Template background"
-            className="w-full h-auto object-contain rounded border border-gray-300"
+            className="rounded border border-gray-300"
             onLoad={() => setImageLoaded(true)}
-            style={{ maxWidth: '100%' }}
           />
           
           {imageLoaded && (
             <TemplateRenderer
               template={template}
               fields={fields}
-              fieldPositions={getFieldPositions()}
+              fieldPositions={getDisplayPositions()}
               isEditing={isEditing}
               imageLoaded={imageLoaded}
               getFieldValue={getFieldValue}
@@ -305,7 +390,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
         <CardTitle className="text-xl">Preview</CardTitle>
       </CardHeader>
       <CardContent className="flex-grow">
-        <ScrollArea className="h-[400px] sm:h-[600px] rounded border">
+        <ScrollArea className="h-[50vh] sm:h-[60vh] md:h-[600px] rounded border">
           <div ref={previewRef}>
             {renderTemplate()}
           </div>
@@ -332,14 +417,26 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, isAdmin = false, on
             </select>
           </div>
         </div>
-        {/* Save Template Button for Admin */}
-        {isAdmin && onSaveTemplate && (
-          <Button
-            onClick={onSaveTemplate}
-            className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
-          >
-            Save Template
-          </Button>
+        {/* Save Template Buttons for Admin */}
+        {isAdmin && (
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {onSaveTemplate && (
+              <Button
+                onClick={() => onSaveTemplate()}
+                className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+              >
+                Save Template
+              </Button>
+            )}
+            {onSaveAsTemplate && (
+              <Button
+                onClick={() => onSaveAsTemplate()}
+                className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+              >
+                Save As Template
+              </Button>
+            )}
+          </div>
         )}
         {(() => {
           const emailField = fields.find(field => field.id === 'email');

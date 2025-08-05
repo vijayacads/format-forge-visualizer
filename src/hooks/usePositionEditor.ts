@@ -14,6 +14,8 @@ interface Field {
 
 interface Template {
   fieldPositions?: {[key: string]: Position};
+  imageWidth?: number;
+  imageHeight?: number;
 }
 
 interface PositionEditorProps {
@@ -58,6 +60,8 @@ export const usePositionEditor = ({ isEditing, template, onTemplateUpdate }: Pos
 
   // Get current field positions from template
   const getFieldPositions = () => {
+    // Use the current template state, not the original template parameter
+    // This ensures we get the latest positions after updates
     return template.fieldPositions || {};
   };
 
@@ -79,6 +83,32 @@ export const usePositionEditor = ({ isEditing, template, onTemplateUpdate }: Pos
     return positions[fieldId] || { x: 100, y: 100, width: 250, height: 40 };
   };
 
+  // Get drag sensitivity for different template types
+  const getDragSensitivity = (fieldId: string): number => {
+    const positions = getFieldPositions();
+    const position = positions[fieldId];
+    
+    // If this looks like a saved template (percentages), reduce sensitivity
+    const isPercentage = position && 
+                        position.x >= 0 && position.x <= 100 && 
+                        position.y >= -100 && position.y <= 100 &&
+                        position.width > 0 && position.width <= 100 && 
+                        position.height > 0 && position.height <= 100;
+    
+    if (isPercentage && template.imageWidth && template.imageHeight) {
+      // Very slow movement for saved templates
+      return 0.02; // 2% of mouse movement for very precise control
+    }
+    
+    return 0.1; // 10% of mouse movement for OCR templates
+  };
+
+
+
+
+
+
+
   // Handle mouse drag for positioning
   const handleMouseDown = (e: React.MouseEvent, fieldId: string) => {
     if (!isEditing || resizing) return;
@@ -92,10 +122,15 @@ export const usePositionEditor = ({ isEditing, template, onTemplateUpdate }: Pos
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
       
+      // Apply sensitivity scaling for smoother movement
+      const sensitivity = getDragSensitivity(fieldId);
+      const scaledDeltaX = deltaX * sensitivity;
+      const scaledDeltaY = deltaY * sensitivity;
+      
       updateFieldPosition(fieldId, {
         ...startPos,
-        x: startPos.x + deltaX,
-        y: startPos.y + deltaY
+        x: startPos.x + scaledDeltaX,
+        y: startPos.y + scaledDeltaY
       });
     };
 
@@ -128,7 +163,12 @@ export const usePositionEditor = ({ isEditing, template, onTemplateUpdate }: Pos
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
       
-      const newPosition = calculateNewPosition(startPos, handle, deltaX, deltaY);
+      // Apply sensitivity scaling for smoother resizing
+      const sensitivity = getDragSensitivity(fieldId);
+      const scaledDeltaX = deltaX * sensitivity;
+      const scaledDeltaY = deltaY * sensitivity;
+      
+      const newPosition = calculateNewPosition(startPos, handle, scaledDeltaX, scaledDeltaY);
       updateFieldPosition(fieldId, newPosition);
     };
 

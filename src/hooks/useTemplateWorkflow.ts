@@ -12,12 +12,88 @@ export const useTemplateWorkflow = (onTemplateCreated: (template: Template, fiel
     });
   };
 
-  const handleFieldsDetected = (fields: DetectedField[], imageData: string) => {
+  const handleFieldsDetected = (fields: DetectedField[], imageData: string, imageWidth?: number, imageHeight?: number) => {
     // Automatically create template and go to step 2 after OCR
-    handleCreateTemplate(imageData, fields);
+    handleCreateTemplate(imageData, fields, imageWidth, imageHeight);
   };
 
-  const handleCreateTemplate = (imageData: string, detectedFields: DetectedField[]) => {
+  const handleCreateTemplate = (imageData: string, detectedFields: DetectedField[], imageWidth?: number, imageHeight?: number) => {
+    // Create fields array first
+    const fields: FormField[] = detectedFields.length > 0 
+      ? [
+          // Always add email field first (mandatory)
+          {
+            id: 'email',
+            label: 'Email',
+            type: 'email' as const,
+            value: '',
+            required: true,
+            placeholder: 'Enter your email address',
+            position: { x: 50, y: 50, width: 300, height: 40 } // Default position
+          },
+          // Then add detected fields
+          ...detectedFields.map((field, index) => ({
+            id: field.id,
+            label: field.label,
+            type: (field.type === 'email' ? 'email' : 
+                  field.type === 'phone' ? 'phone' : 
+                  field.type === 'date' ? 'date' : 
+                  field.type === 'text' ? 'richtext' : // Convert text fields to richtext
+                  'richtext') as FormField['type'], // Default to richtext for all other fields
+            value: '',
+            required: field.required,
+            placeholder: `Enter ${field.label.toLowerCase()}`,
+            position: field.position // Include position data from OCR
+          }))
+        ]
+      : [
+          // Always add email field first (mandatory)
+          {
+            id: 'email',
+            label: 'Email',
+            type: 'email' as const,
+            value: '',
+            required: true,
+            placeholder: 'Enter your email address',
+            position: { x: 50, y: 50, width: 300, height: 40 } // Default position
+          },
+          {
+            id: 'title',
+            label: 'Document Title',
+            type: 'text' as const,
+            value: '',
+            required: true
+          }, {
+            id: 'section1',
+            label: 'Executive Summary',
+            type: 'textarea' as const,
+            value: ''
+          }, {
+            id: 'section2',
+            label: 'Key Findings',
+            type: 'textarea' as const,
+            value: ''
+          }, {
+            id: 'section3',
+            label: 'Recommendations',
+            type: 'textarea' as const,
+            value: ''
+          }, {
+            id: 'section4',
+            label: 'Next Steps',
+            type: 'textarea' as const,
+            value: ''
+          }
+        ];
+
+    // Convert field positions to fieldPositions object
+    const fieldPositions: { [key: string]: { x: number; y: number; width: number; height: number } } = {};
+    fields.forEach(field => {
+      if (field.position) {
+        fieldPositions[field.id] = field.position;
+      }
+    });
+
     // Create a custom template from the uploaded image with detected fields
     const customTemplate: Template = {
       id: 'custom-' + Date.now(),
@@ -25,73 +101,10 @@ export const useTemplateWorkflow = (onTemplateCreated: (template: Template, fiel
       type: 'custom',
       imageUrl: null, // We'll use imageData for persistent storage
       imageData: imageData, // Store the base64 image data for persistence
-      fieldPositions: {}, // Initialize empty field positions
-      fields: detectedFields.length > 0 
-        ? [
-            // Always add email field first (mandatory)
-            {
-              id: 'email',
-              label: 'Email',
-              type: 'email',
-              value: '',
-              required: true,
-              placeholder: 'Enter your email address',
-              position: { x: 50, y: 50, width: 300, height: 40 } // Default position
-            },
-            // Then add detected fields
-            ...detectedFields.map((field, index) => ({
-              id: field.id,
-              label: field.label,
-              type: field.type === 'email' ? 'email' : 
-                    field.type === 'phone' ? 'phone' : 
-                    field.type === 'date' ? 'date' : 
-                    field.type === 'text' ? 'richtext' : // Convert text fields to richtext
-                    'richtext', // Default to richtext for all other fields
-              value: '',
-              required: field.required,
-              placeholder: `Enter ${field.label.toLowerCase()}`,
-              position: field.position // Include position data from OCR
-            }))
-          ]
-        : [
-            // Always add email field first (mandatory)
-            {
-              id: 'email',
-              label: 'Email',
-              type: 'email',
-              value: '',
-              required: true,
-              placeholder: 'Enter your email address',
-              position: { x: 50, y: 50, width: 300, height: 40 } // Default position
-            },
-            {
-              id: 'title',
-              label: 'Document Title',
-              type: 'text',
-              value: '',
-              required: true
-            }, {
-              id: 'section1',
-              label: 'Executive Summary',
-              type: 'textarea',
-              value: ''
-            }, {
-              id: 'section2',
-              label: 'Key Findings',
-              type: 'textarea',
-              value: ''
-            }, {
-              id: 'section3',
-              label: 'Recommendations',
-              type: 'textarea',
-              value: ''
-            }, {
-              id: 'section4',
-              label: 'Next Steps',
-              type: 'textarea',
-              value: ''
-            }
-          ],
+      imageWidth: imageWidth, // Store original image width
+      imageHeight: imageHeight, // Store original image height
+      fieldPositions: fieldPositions, // Initialize with field positions from OCR
+      fields: fields,
       layout: {
         sections: [] // Remove artificial section creation - use flat field list
       }
