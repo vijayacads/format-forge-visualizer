@@ -524,3 +524,99 @@
     font-size: clamp(8px, 1.5vw, 16px) !important;
   }
 }
+
+/* Editor.js Content Display Styles */
+.editorjs-content {
+  line-height: 1.5;
+}
+
+.editorjs-content p {
+  margin-bottom: 0.5rem;
+}
+
+.editorjs-content ul,
+.editorjs-content ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.editorjs-content li {
+  margin-bottom: 0.25rem;
+}
+
+.editorjs-content h1,
+.editorjs-content h2,
+.editorjs-content h3 {
+  margin: 0.5rem 0;
+  font-weight: bold;
+}
+
+.editorjs-content h1 {
+  font-size: 1.5rem;
+}
+
+.editorjs-content h2 {
+  font-size: 1.25rem;
+}
+
+.editorjs-content h3 {
+  font-size: 1.125rem;
+}
+
+/* Responsive text scaling for mobile */
+@media (max-width: 768px) {
+  .editorjs-content {
+    font-size: clamp(8px, 1.5vw, 16px) !important;
+  }
+  
+  .editorjs-content * {
+    font-size: clamp(8px, 1.5vw, 16px) !important;
+  }
+  
+  .editorjs-content h1 {
+    font-size: clamp(12px, 2vw, 24px) !important;
+  }
+  
+  .editorjs-content h2 {
+    font-size: clamp(10px, 1.8vw, 20px) !important;
+  }
+  
+  .editorjs-content h3 {
+    font-size: clamp(9px, 1.6vw, 18px) !important;
+  }
+}
+
+/* Editor.js Container Styles */
+.editorjs-container {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background: white;
+}
+
+.editorjs-container .codex-editor__redactor {
+  padding: 10px;
+}
+
+.editorjs-container .ce-block__content {
+  max-width: 100%;
+  margin: 0;
+}
+
+/* Mobile-friendly Editor.js */
+@media (max-width: 768px) {
+  .editorjs-container .ce-block__content {
+    font-size: 14px;
+  }
+  
+  .editorjs-container .ce-toolbar__content {
+    max-width: 100%;
+  }
+  
+  .editorjs-container .ce-toolbar__plus {
+    left: 10px;
+  }
+  
+  .editorjs-container .ce-toolbar__settings {
+    right: 10px;
+  }
+}
