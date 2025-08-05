@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-
-// Register custom font sizes for React Quill
-const Quill = ReactQuill.Quill;
-const Size = Quill.import('attributors/style/size');
-Size.whitelist = ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'];
-Quill.register(Size, true);
+import { Editor } from '@tinymce/tinymce-react';
 
 interface RichTextEditorProps {
   value: string;
@@ -26,65 +19,59 @@ const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) =
     onChange(content);
   };
 
-  // Quill modules to attach to editor
-  const modules = {
-    toolbar: [
-      [{ 'size': ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'] }],
-      ['bold', 'italic', 'underline'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'align': [] }],
-      ['clean']
+  // TinyMCE configuration to match React Quill features
+  const init = {
+    height: 200,
+    menubar: false,
+    plugins: [
+      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
     ],
+    toolbar: [
+      'fontsize | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify',
+      'bullist numlist | removeformat'
+    ],
+    fontsize_formats: '10px 12px 14px 16px 18px 20px 24px 28px 32px 36px 48px',
+    content_style: `
+      body { 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        margin: 0;
+        padding: 8px;
+      }
+      @media (max-width: 768px) {
+        body { font-size: 12px; }
+      }
+    `,
+    placeholder: placeholder || 'Enter text here...',
+    directionality: 'ltr',
+    text_align: 'left',
+    branding: false,
+    elementpath: false,
+    resize: false,
+    statusbar: false,
+    // Mobile-friendly configuration
+    mobile: {
+      theme: 'silver',
+      plugins: ['lists', 'autolink', 'paste'],
+      toolbar: 'bold italic | bullist numlist',
+      menubar: false,
+      statusbar: false,
+      elementpath: false,
+      resize: false
+    }
   };
-
-  // Quill editor formats
-  const formats = [
-    'size',
-    'bold', 'italic', 'underline',
-    'list', 'bullet',
-    'color', 'background',
-    'align'
-  ];
 
   return (
     <div className="rich-text-editor">
-      <ReactQuill
-        theme="snow"
+      <Editor
         value={editorValue}
-        onChange={handleChange}
-        modules={modules}
-        formats={formats}
-        placeholder={placeholder}
-        style={{
-          direction: 'ltr',
-          textAlign: 'left'
-        }}
+        onEditorChange={handleChange}
+        init={init}
         className="mobile-friendly-editor"
       />
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          .mobile-friendly-editor .ql-toolbar {
-            @media (max-width: 640px) {
-              padding: 8px !important;
-              flex-wrap: wrap !important;
-              gap: 4px !important;
-            }
-          }
-          .mobile-friendly-editor .ql-toolbar button {
-            @media (max-width: 640px) {
-              padding: 4px 6px !important;
-              margin: 2px !important;
-            }
-          }
-          .mobile-friendly-editor .ql-editor {
-            @media (max-width: 640px) {
-              min-height: 100px !important;
-              font-size: 16px !important;
-            }
-          }
-        `
-      }} />
     </div>
   );
 };

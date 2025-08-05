@@ -37,7 +37,7 @@ const FieldOverlay: React.FC<FieldOverlayProps> = ({
     >
       {field.type === 'richtext' ? (
         <div 
-          className="text-gray-900 ql-editor leading-tight text-sm"
+          className="text-gray-900 leading-tight text-sm tiny-editor-content"
           style={{ 
             lineHeight: '1.2', 
             margin: 0, 

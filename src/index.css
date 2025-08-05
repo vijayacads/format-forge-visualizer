@@ -477,3 +477,50 @@
 .ql-editor .ql-bg-pink {
   background-color: #fdf2f8;
 }
+
+/* TinyMCE Content Display Styles */
+.tiny-editor-content {
+  line-height: 1.5;
+}
+
+.tiny-editor-content p {
+  margin-bottom: 0.5rem;
+}
+
+.tiny-editor-content ul,
+.tiny-editor-content ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.tiny-editor-content li {
+  margin-bottom: 0.25rem;
+}
+
+/* Text alignment */
+.tiny-editor-content .mce-content-body[style*="text-align: left"] {
+  text-align: left;
+}
+
+.tiny-editor-content .mce-content-body[style*="text-align: center"] {
+  text-align: center;
+}
+
+.tiny-editor-content .mce-content-body[style*="text-align: right"] {
+  text-align: right;
+}
+
+.tiny-editor-content .mce-content-body[style*="text-align: justify"] {
+  text-align: justify;
+}
+
+/* Responsive text scaling for mobile */
+@media (max-width: 768px) {
+  .tiny-editor-content {
+    font-size: clamp(8px, 1.5vw, 16px) !important;
+  }
+  
+  .tiny-editor-content * {
+    font-size: clamp(8px, 1.5vw, 16px) !important;
+  }
+}
