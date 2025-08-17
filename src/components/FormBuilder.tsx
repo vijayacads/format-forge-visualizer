@@ -29,12 +29,16 @@ const FormBuilder = React.memo(({
   }, [template.fields]);
 
   const handleFieldChange = useCallback((id: string, value: string) => {
-    const updatedFields = fields.map(field => 
-      field.id === id ? { ...field, value } : field
-    );
-    setFields(updatedFields);
-    onChange(updatedFields);
-  }, [fields, onChange]);
+    setFields(prevFields => {
+      const updatedFields = prevFields.map(field => 
+        field.id === id ? { ...field, value } : field
+      );
+      onChange(updatedFields);
+      return updatedFields;
+    });
+  }, [onChange]);
+
+
 
   const handleFieldLabelChange = useCallback((id: string, newLabel: string) => {
     const updatedFields = fields.map(field => 
@@ -112,7 +116,7 @@ const FormBuilder = React.memo(({
         return (
             <RichTextEditor
               value={field.value}
-            onChange={(value) => handleFieldChange(field.id, value)}
+              onChange={(value) => handleFieldChange(field.id, value)}
               placeholder={placeholder}
             />
         );

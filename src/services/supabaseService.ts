@@ -106,18 +106,14 @@ class SupabaseService {
 
   async createTemplate(template: Omit<Template, 'id'>): Promise<Template> {
     try {
-      // Convert pixel positions to percentages for storage
-      const percentagePositions = template.fieldPositions && template.imageWidth && template.imageHeight
-        ? convertFieldPositionsToPercentages(template.fieldPositions, template.imageWidth, template.imageHeight)
-        : template.fieldPositions;
-
+      // Database insert moved to beginning for testing
       const { data, error } = await supabase
         .from('templates')
         .insert({
           name: template.name,
           type: template.type,
           fields: template.fields,
-          field_positions: percentagePositions,
+          field_positions: template.fieldPositions, // Use original positions for now
           image_url: template.imageUrl,
           image_data: template.imageData,
           image_width: template.imageWidth,

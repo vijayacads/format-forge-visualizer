@@ -22,41 +22,56 @@ export interface PercentagePosition {
  */
 export const pixelsToPercentages = (
   position: Position, 
-  imageWidth: number, 
-  imageHeight: number
+  displayedWidth: number, 
+  displayedHeight: number
 ): PercentagePosition => {
-  if (imageWidth <= 0 || imageHeight <= 0) {
-    console.warn('Invalid image dimensions:', { imageWidth, imageHeight });
+  if (displayedWidth <= 0 || displayedHeight <= 0) {
+    console.warn('Invalid displayed image dimensions:', { displayedWidth, displayedHeight });
     return { x: 0, y: 0, width: 0, height: 0 };
   }
 
   return {
-    x: Math.round((position.x / imageWidth) * 100 * 100) / 100, // Round to 2 decimal places
-    y: Math.round((position.y / imageHeight) * 100 * 100) / 100,
-    width: Math.round((position.width / imageWidth) * 100 * 100) / 100,
-    height: Math.round((position.height / imageHeight) * 100 * 100) / 100
+    x: Math.round((position.x / displayedWidth) * 100 * 100) / 100, // Round to 2 decimal places
+    y: Math.round((position.y / displayedHeight) * 100 * 100) / 100,
+    width: Math.round((position.width / displayedWidth) * 100 * 100) / 100,
+    height: Math.round((position.height / displayedHeight) * 100 * 100) / 100
   };
 };
 
 /**
- * Convert percentage positions to pixel positions relative to image dimensions
+ * Convert percentage positions to pixel positions relative to displayed image dimensions
  */
 export const percentagesToPixels = (
   position: PercentagePosition, 
-  imageWidth: number, 
-  imageHeight: number
+  displayedWidth: number, 
+  displayedHeight: number
 ): Position => {
-  if (imageWidth <= 0 || imageHeight <= 0) {
-    console.warn('Invalid image dimensions:', { imageWidth, imageHeight });
+  if (displayedWidth <= 0 || displayedHeight <= 0) {
+    console.warn('Invalid displayed image dimensions:', { displayedWidth, displayedHeight });
     return { x: 0, y: 0, width: 0, height: 0 };
   }
 
-  return {
-    x: Math.round((position.x / 100) * imageWidth),
-    y: Math.round((position.y / 100) * imageHeight),
-    width: Math.round((position.width / 100) * imageWidth),
-    height: Math.round((position.height / 100) * imageHeight)
+  const result = {
+    x: Math.round((position.x / 100) * displayedWidth),
+    y: Math.round((position.y / 100) * displayedHeight),
+    width: Math.round((position.width / 100) * displayedWidth),
+    height: Math.round((position.height / 100) * displayedHeight)
   };
+
+  // Debug position calculation
+  console.log('Position Calculation:', {
+    input: position,
+    displayedDimensions: { width: displayedWidth, height: displayedHeight },
+    output: result,
+    calculation: {
+      x: `${position.x}% × ${displayedWidth}px = ${result.x}px`,
+      y: `${position.y}% × ${displayedHeight}px = ${result.y}px`,
+      width: `${position.width}% × ${displayedWidth}px = ${result.width}px`,
+      height: `${position.height}% × ${displayedHeight}px = ${result.height}px`
+    }
+  });
+
+  return result;
 };
 
 /**
@@ -64,13 +79,13 @@ export const percentagesToPixels = (
  */
 export const convertFieldPositionsToPercentages = (
   fieldPositions: { [key: string]: Position },
-  imageWidth: number,
-  imageHeight: number
+  displayedWidth: number,
+  displayedHeight: number
 ): { [key: string]: PercentagePosition } => {
   const convertedPositions: { [key: string]: PercentagePosition } = {};
   
   Object.entries(fieldPositions).forEach(([fieldId, position]) => {
-    convertedPositions[fieldId] = pixelsToPercentages(position, imageWidth, imageHeight);
+    convertedPositions[fieldId] = pixelsToPercentages(position, displayedWidth, displayedHeight);
   });
   
   return convertedPositions;
@@ -81,13 +96,13 @@ export const convertFieldPositionsToPercentages = (
  */
 export const convertFieldPositionsToPixels = (
   fieldPositions: { [key: string]: PercentagePosition },
-  imageWidth: number,
-  imageHeight: number
+  displayedWidth: number,
+  displayedHeight: number
 ): { [key: string]: Position } => {
   const convertedPositions: { [key: string]: Position } = {};
   
   Object.entries(fieldPositions).forEach(([fieldId, position]) => {
-    convertedPositions[fieldId] = percentagesToPixels(position, imageWidth, imageHeight);
+    convertedPositions[fieldId] = percentagesToPixels(position, displayedWidth, displayedHeight);
   });
   
   return convertedPositions;

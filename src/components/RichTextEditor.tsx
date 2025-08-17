@@ -1,188 +1,93 @@
-import React, { useState, useEffect, useRef } from 'react';
-import EditorJS from '@editorjs/editorjs';
-import Paragraph from '@editorjs/paragraph';
-import Header from '@editorjs/header';
-import List from '@editorjs/list';
-import Marker from '@editorjs/marker';
-import Underline from '@editorjs/underline';
+import React, { useEffect, useRef } from 'react';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
 
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  readOnly?: boolean;
 }
 
-const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) => {
-  const editorRef = useRef<EditorJS>();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isReady, setIsReady] = useState(false);
-
-  // Convert HTML to Editor.js JSON format
-  const htmlToEditorData = (html: string): any => {
-    if (!html || html === '<span class="text-gray-400 italic">No content added yet</span>') {
-      return {
-        time: Date.now(),
-        blocks: [
-          {
-            id: '1',
-            type: 'paragraph',
-            data: {
-              text: ''
-            }
-          }
-        ],
-        version: '2.22.2'
-      };
-    }
-
-    // Simple HTML to Editor.js conversion
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    
-    const blocks = [];
-    let blockId = 1;
-
-    // Convert text nodes to paragraphs
-    const textContent = tempDiv.textContent || '';
-    if (textContent.trim()) {
-      blocks.push({
-        id: blockId.toString(),
-        type: 'paragraph',
-        data: {
-          text: textContent
-        }
-      });
-      blockId++;
-    }
-
-    return {
-      time: Date.now(),
-      blocks: blocks.length > 0 ? blocks : [
-        {
-          id: '1',
-          type: 'paragraph',
-          data: {
-            text: ''
-          }
-        }
-      ],
-      version: '2.22.2'
-    };
-  };
-
-  // Convert Editor.js JSON to HTML
-  const editorDataToHtml = (data: any): string => {
-    if (!data || !data.blocks) return '';
-    
-    let html = '';
-    data.blocks.forEach((block: any) => {
-      switch (block.type) {
-        case 'paragraph':
-          html += `<p>${block.data.text || ''}</p>`;
-          break;
-        case 'header':
-          const level = block.data.level || 1;
-          html += `<h${level}>${block.data.text || ''}</h${level}>`;
-          break;
-        case 'list':
-          const listType = block.data.style === 'ordered' ? 'ol' : 'ul';
-          html += `<${listType}>`;
-          block.data.items.forEach((item: string) => {
-            html += `<li>${item}</li>`;
-          });
-          html += `</${listType}>`;
-          break;
-        default:
-          html += `<p>${block.data.text || ''}</p>`;
-      }
-    });
-    
-    return html || '<span class="text-gray-400 italic">No content added yet</span>';
-  };
+const RichTextEditor = ({ value, onChange, placeholder, readOnly = false }: RichTextEditorProps) => {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const quillRef = useRef<Quill | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!editorRef.current) return;
 
-    // Initialize Editor.js
-    const editor = new EditorJS({
-      holder: containerRef.current,
-      tools: {
-        paragraph: {
-          class: Paragraph,
-          inlineToolbar: ['marker', 'underline'],
-          config: {
-            placeholder: placeholder || 'Enter text here...'
-          }
-        },
-        header: {
-          class: Header,
-          config: {
-            placeholder: 'Enter a header',
-            levels: [1, 2, 3],
-            defaultLevel: 1
-          }
-        },
-        list: {
-          class: List,
-          inlineToolbar: true,
-          config: {
-            defaultStyle: 'unordered'
-          }
-        },
-        marker: {
-          class: Marker,
-          shortcut: 'CMD+SHIFT+M'
-        },
-        underline: {
-          class: Underline,
-          shortcut: 'CMD+U'
-        }
-      },
-      data: htmlToEditorData(value),
-      onChange: async () => {
-        if (editor && isReady) {
-          try {
-            const data = await editor.save();
-            const html = editorDataToHtml(data);
-            onChange(html);
-          } catch (error) {
-            console.error('Error saving editor data:', error);
-          }
-        }
-      },
-      onReady: () => {
-        setIsReady(true);
-      },
+    // Register custom font sizes
+    const Size = Quill.import('attributors/style/size') as any;
+    Size.whitelist = ['8px', '10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'];
+    Quill.register(Size, true);
+
+    // Initialize Quill
+    const quill = new Quill(editorRef.current, {
+      theme: 'snow',
       placeholder: placeholder || 'Enter text here...',
-      minHeight: 200,
-      // Mobile-friendly configuration
-      tunes: ['bold', 'italic'],
-      // Responsive design
-      readOnly: false,
-      // Disable unnecessary features for mobile
-      hideToolbar: false
+      readOnly: readOnly,
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline'],
+          [{ 'size': ['8px', '10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'] }],
+          [{ 'color': [] }, { 'background': [] }],
+          [{ 'align': [] }],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          ['clean']
+        ]
+      },
+                     formats: [
+                 'bold', 'italic', 'underline', 'size', 'color', 'background',
+                 'align', 'list'
+               ]
     });
 
-    editorRef.current = editor;
+    // Set initial content
+    if (value) {
+      quill.root.innerHTML = value;
+    }
 
+    // Handle content changes
+    quill.on('text-change', () => {
+      const html = quill.root.innerHTML;
+      onChange(html);
+    });
+
+    quillRef.current = quill;
+
+    // Cleanup
     return () => {
-      if (editorRef.current) {
-        editorRef.current.destroy();
+      if (quillRef.current) {
+        quillRef.current = null;
       }
     };
-  }, []);
+  }, []); // Only run once on mount
 
-  // Update editor when value changes externally
+  // Update content when value prop changes
   useEffect(() => {
-    if (editorRef.current && isReady) {
-      const newData = htmlToEditorData(value);
-      editorRef.current.render(newData);
+    if (quillRef.current && value !== quillRef.current.root.innerHTML) {
+      quillRef.current.root.innerHTML = value;
     }
-  }, [value, isReady]);
+  }, [value]);
+
+  // Update readOnly state
+  useEffect(() => {
+    if (quillRef.current) {
+      quillRef.current.enable(!readOnly);
+    }
+  }, [readOnly]);
 
   return (
     <div className="rich-text-editor">
-      <div ref={containerRef} className="editorjs-container" />
+      <div 
+        ref={editorRef}
+        className="quill-editor"
+        style={{
+          minHeight: '200px',
+          fontSize: '14px',
+          lineHeight: '1.5'
+        }}
+      />
     </div>
   );
 };

@@ -18,6 +18,7 @@ interface TemplateRendererProps {
   getFieldValue: (id: string) => string;
   onMouseDown: (e: React.MouseEvent, fieldId: string) => void;
   onResizeStart: (e: React.MouseEvent, fieldId: string, handle: string) => void;
+  containerGlobalPosition?: { left: number; top: number };
 }
 
 const TemplateRenderer = React.memo<TemplateRendererProps>(({
@@ -28,7 +29,8 @@ const TemplateRenderer = React.memo<TemplateRendererProps>(({
   imageLoaded,
   getFieldValue,
   onMouseDown,
-  onResizeStart
+  onResizeStart,
+  containerGlobalPosition
 }) => {
   // Memoize the filtered fields to prevent unnecessary re-renders
   const visibleFields = useMemo(() => {
@@ -49,14 +51,20 @@ const TemplateRenderer = React.memo<TemplateRendererProps>(({
 
   return (
     <div className="absolute inset-0">
+
       {visibleFields.map(field => {
         const value = getFieldValue(field.id);
-        const position = fieldPositions[field.id] || { 
+        const basePosition = fieldPositions[field.id] || { 
           x: 100, 
           y: 100, 
           width: 250, 
           height: 40 
         };
+        
+        // Use base position (image-relative coordinates)
+        const position = basePosition;
+        
+
         
         return (
           <FieldOverlay

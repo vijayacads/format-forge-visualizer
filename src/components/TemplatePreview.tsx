@@ -1,5 +1,5 @@
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { FormField, Template } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -31,12 +31,11 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
   const [pdfMode, setPdfMode] = useState<'single-page' | 'multi-page'>('single-page');
   const [imageRef, setImageRef] = useState<HTMLImageElement | null>(null);
   const [currentTemplate, setCurrentTemplate] = useState<Template>(template);
-  const [forceUpdate, setForceUpdate] = useState(0);
 
   // Force re-calculation when image size changes (viewport resize, mobile toggle, etc.)
   useEffect(() => {
     const handleResize = () => {
-      setForceUpdate(prev => prev + 1);
+      // Force re-render when viewport changes
     };
 
     window.addEventListener('resize', handleResize);
@@ -55,20 +54,26 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
     setCurrentTemplate(template);
   }, [template]);
 
+
+
   const getFieldValue = (id: string) => {
     const field = fields.find(f => f.id === id);
     return field?.value || '';
   };
 
+  // Get image container origin relative to page
+  const getImageContainerOrigin = () => {
+    const imageContainer = imageRef?.parentElement;
+    return {
+      x: imageContainer?.offsetLeft || 0,  // Distance from page left
+      y: imageContainer?.offsetTop || 0    // Distance from page top
+    };
+  };
+
   // Convert percentage positions to pixels for display
   const getDisplayPositions = () => {
-    // Force recalculation when viewport changes
-    const _ = forceUpdate; // This makes the function depend on forceUpdate
-    
-    // Use currentTemplate for display to get the latest positions
     const positions = currentTemplate.fieldPositions || {};
     
-    // Check if positions are percentages (from database) or pixels (legacy/OCR)
     if (Object.keys(positions).length > 0) {
       const firstPosition = Object.values(positions)[0];
       
@@ -79,26 +84,18 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
                           firstPosition.height > 0 && firstPosition.height <= 100;
       
       if (isPercentage && template.imageWidth && template.imageHeight) {
-        // Use actual displayed image size for position calculation
-        const displayWidth = imageRef?.offsetWidth || template.imageWidth;
-        const displayHeight = imageRef?.offsetHeight || template.imageHeight;
+        // Get displayed image dimensions (what user actually sees)
+        const displayedImageWidth = imageRef?.offsetWidth || template.imageWidth;
+        const displayedImageHeight = imageRef?.offsetHeight || template.imageHeight;
         
-        // Debug: Check image dimensions
-        console.log('Position calculation debug:', {
-          storedWidth: template.imageWidth,
-          storedHeight: template.imageHeight,
-          displayWidth,
-          displayHeight,
-          actualImageWidth: imageRef?.naturalWidth,
-          actualImageHeight: imageRef?.naturalHeight,
-          firstPosition
-        });
+        // Debug percentage values
+        console.log('🔍 PERCENTAGE VALUES:', positions);
         
-        // Convert percentages to pixels using DISPLAYED image dimensions
+        // Convert percentages to pixels using DISPLAYED dimensions
         const pixelPositions = convertFieldPositionsToPixels(
           positions,
-          displayWidth,
-          displayHeight
+          displayedImageWidth,    // Use displayed width instead of original
+          displayedImageHeight    // Use displayed height instead of original
         );
         
         return pixelPositions;
@@ -107,6 +104,462 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
     
     return positions;
   };
+
+
+
+  // Debug image dimensions for scaling check
+  useEffect(() => {
+    if (imageRef) {
+      console.log('📏 IMAGE SCALING DEBUG:', {
+        originalDimensions: {
+          width: template.imageWidth,
+          height: template.imageHeight
+        },
+        currentDimensions: {
+          width: imageRef.offsetWidth,
+          height: imageRef.offsetHeight
+        },
+        scalingRatio: {
+          width: imageRef.offsetWidth / template.imageWidth,
+          height: imageRef.offsetHeight / template.imageHeight
+        }
+      });
+    }
+  }, [imageRef, template.imageWidth, template.imageHeight]);
+
+  // Debug effect to monitor imageRef changes
+  useEffect(() => {
+    if (imageRef) {
+      console.log('🖼️ IMAGE REF UPDATED:', {
+        offsetWidth: imageRef.offsetWidth,
+        offsetHeight: imageRef.offsetHeight,
+        naturalWidth: imageRef.naturalWidth,
+        naturalHeight: imageRef.naturalHeight
+      });
+      
+      // Get actual rendered dimensions from webpage
+      const rect = imageRef.getBoundingClientRect();
+      const computedStyle = window.getComputedStyle(imageRef);
+      
+      console.log('📏 ACTUAL IMAGE RENDERED DIMENSIONS:', {
+        expectedDimensions: {
+          width: imageRef.offsetWidth,
+          height: imageRef.offsetHeight
+        },
+        actualRendered: {
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+          right: rect.right,
+          bottom: rect.bottom
+        },
+        computedStyle: {
+          width: computedStyle.width,
+          height: computedStyle.height,
+          objectFit: computedStyle.objectFit,
+          objectPosition: computedStyle.objectPosition
+        },
+        difference: {
+          widthDiff: rect.width - imageRef.offsetWidth,
+          heightDiff: rect.height - imageRef.offsetHeight
+        }
+      });
+    }
+  }, [imageRef]);
+
+  // Debug function to check all container dimensions
+  const debugContainerDimensions = () => {
+    if (!previewRef.current || !imageRef) return;
+    
+    const previewContainer = previewRef.current;
+    const imageContainer = imageRef.parentElement;
+    const scrollArea = previewContainer.closest('[data-radix-scroll-area-viewport]') as HTMLElement;
+    const cardContent = (previewContainer.closest('[class*="p-6"]') || previewContainer.closest('[class*="flex-grow"]')) as HTMLElement;
+    
+    // Get all parent elements to trace the height difference
+    let currentElement: HTMLElement | null = previewContainer;
+    const parentChain = [];
+    while (currentElement && currentElement !== document.body) {
+      parentChain.push({
+        tagName: currentElement.tagName,
+        className: currentElement.className,
+        offsetHeight: currentElement.offsetHeight,
+        clientHeight: currentElement.clientHeight,
+        scrollHeight: currentElement.scrollHeight,
+        computedStyle: window.getComputedStyle(currentElement)
+      });
+      currentElement = currentElement.parentElement;
+    }
+    
+    // Check for positioning context issues
+    const imageOffsetLeft = imageRef.offsetLeft;
+    const imageOffsetTop = imageRef.offsetTop;
+    const containerWidth = imageContainer?.offsetWidth || 0;
+    const containerHeight = imageContainer?.offsetHeight || 0;
+    const imageWidth = imageRef.offsetWidth;
+    const imageHeight = imageRef.offsetHeight;
+    
+    const positioningIssues = {
+      hasHorizontalOffset: imageOffsetLeft > 0,
+      hasVerticalOffset: imageOffsetTop > 0,
+      hasWidthMismatch: containerWidth !== imageWidth,
+      hasHeightMismatch: containerHeight !== imageHeight,
+      horizontalGap: imageOffsetLeft,
+      verticalGap: imageOffsetTop,
+      widthDifference: containerWidth - imageWidth,
+      heightDifference: containerHeight - imageHeight
+    };
+    
+    console.log('🏗️ CONTAINER DIMENSIONS DEBUG:', {
+      previewContainer: {
+        offsetWidth: previewContainer.offsetWidth,
+        offsetHeight: previewContainer.offsetHeight,
+        clientWidth: previewContainer.clientWidth,
+        clientHeight: previewContainer.clientHeight,
+        scrollWidth: previewContainer.scrollWidth,
+        scrollHeight: previewContainer.scrollHeight
+      },
+      imageContainer: imageContainer ? {
+        offsetWidth: imageContainer.offsetWidth,
+        offsetHeight: imageContainer.offsetHeight,
+        clientWidth: imageContainer.clientWidth,
+        clientHeight: imageContainer.clientHeight,
+        className: imageContainer.className
+      } : 'null',
+      image: {
+        offsetWidth: imageRef.offsetWidth,
+        offsetHeight: imageRef.offsetHeight,
+        offsetLeft: imageRef.offsetLeft,
+        offsetTop: imageRef.offsetTop,
+        naturalWidth: imageRef.naturalWidth,
+        naturalHeight: imageRef.naturalHeight,
+        className: imageRef.className
+      },
+      scrollArea: scrollArea ? {
+        offsetWidth: scrollArea.offsetWidth,
+        offsetHeight: scrollArea.offsetHeight,
+        clientWidth: scrollArea.clientWidth,
+        clientHeight: scrollArea.clientHeight
+      } : 'null',
+      cardContent: cardContent ? {
+        className: cardContent.className,
+        computedStyle: window.getComputedStyle(cardContent)
+      } : 'null',
+      parentChain: parentChain,
+      positioningIssues: positioningIssues
+    });
+    
+    // Detailed parent chain analysis
+    console.log('🔍 DETAILED PARENT CHAIN ANALYSIS:');
+    parentChain.forEach((element, index) => {
+      const computedStyle = element.computedStyle;
+      console.log(`Level ${index}:`, {
+        tagName: element.tagName,
+        className: element.className,
+        offsetHeight: element.offsetHeight,
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+        paddingTop: computedStyle.paddingTop,
+        paddingBottom: computedStyle.paddingBottom,
+        marginTop: computedStyle.marginTop,
+        marginBottom: computedStyle.marginBottom,
+        height: computedStyle.height
+      });
+    });
+    
+    // Positioning context analysis
+    console.log('🎯 POSITIONING CONTEXT ANALYSIS:', {
+      containerDimensions: { width: containerWidth, height: containerHeight },
+      imageDimensions: { width: imageWidth, height: imageHeight },
+      imageOffsets: { left: imageOffsetLeft, top: imageOffsetTop },
+      issues: positioningIssues,
+      conclusion: positioningIssues.hasHorizontalOffset || positioningIssues.hasVerticalOffset || 
+                 positioningIssues.hasWidthMismatch || positioningIssues.hasHeightMismatch 
+                 ? '⚠️ POSITIONING MISMATCH DETECTED' : '✅ POSITIONING LOOKS CORRECT'
+    });
+  };
+
+  // Function to debug the entire container hierarchy
+  const debugContainerHierarchy = () => {
+    if (!previewRef.current) return;
+    
+    let currentElement: HTMLElement | null = previewRef.current;
+    const hierarchy = [];
+    let level = 0;
+    
+    // Trace up the DOM tree to find positioning issues
+    while (currentElement && currentElement !== document.body && level < 20) {
+      const rect = currentElement.getBoundingClientRect();
+      const computedStyle = window.getComputedStyle(currentElement);
+      const offsetParent = currentElement.offsetParent as HTMLElement;
+      
+      hierarchy.push({
+        level,
+        tagName: currentElement.tagName,
+        className: currentElement.className,
+        id: currentElement.id,
+        offsetTop: currentElement.offsetTop,
+        offsetLeft: currentElement.offsetLeft,
+        getBoundingClientRect: {
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height
+        },
+        computedStyle: {
+          position: computedStyle.position,
+          top: computedStyle.top,
+          left: computedStyle.left,
+          marginTop: computedStyle.marginTop,
+          marginBottom: computedStyle.marginBottom,
+          paddingTop: computedStyle.paddingTop,
+          paddingBottom: computedStyle.paddingBottom,
+          height: computedStyle.height,
+          minHeight: computedStyle.minHeight,
+          maxHeight: computedStyle.maxHeight,
+          display: computedStyle.display,
+          flexDirection: computedStyle.flexDirection,
+          alignItems: computedStyle.alignItems,
+          justifyContent: computedStyle.justifyContent
+        },
+        offsetParent: offsetParent ? {
+          tagName: offsetParent.tagName,
+          className: offsetParent.className,
+          offsetTop: offsetParent.offsetTop,
+          offsetLeft: offsetParent.offsetLeft
+        } : 'null'
+      });
+      
+      currentElement = currentElement.parentElement;
+      level++;
+    }
+    
+    console.log('🏗️ CONTAINER HIERARCHY DEBUG:');
+    hierarchy.forEach((element, index) => {
+      console.log(`Level ${index}:`, element);
+    });
+    
+    // Find the source of the negative positioning
+    const negativePositionedElements = hierarchy.filter(el => 
+      el.getBoundingClientRect.top < 0 || el.offsetTop > 0
+    );
+    
+    if (negativePositionedElements.length > 0) {
+      console.log('🚨 ELEMENTS WITH NEGATIVE/UNEXPECTED POSITIONING:', negativePositionedElements);
+    }
+    
+    // Check for flex layout issues
+    const flexElements = hierarchy.filter(el => 
+      el.computedStyle.display === 'flex' || el.computedStyle.display === 'inline-flex'
+    );
+    
+    console.log('📐 FLEX LAYOUT ELEMENTS:', flexElements);
+    
+    return hierarchy;
+  };
+
+  // Function to capture and test field positions from webpage
+  const captureFieldPositionsFromWebpage = () => {
+    if (!imageRef) return;
+    
+    // Get all field elements from the DOM
+    const fieldElements = document.querySelectorAll('[class*="absolute rounded"]');
+    const imageRect = imageRef.getBoundingClientRect();
+    
+    console.log('🔍 CAPTURING FIELD POSITIONS FROM WEBPAGE:');
+    console.log('Image bounds:', {
+      left: imageRect.left,
+      top: imageRect.top,
+      width: imageRect.width,
+      height: imageRect.height
+    });
+    
+    const capturedPositions: { [key: string]: any } = {};
+    
+    fieldElements.forEach((element, index) => {
+      const rect = element.getBoundingClientRect();
+      const computedStyle = window.getComputedStyle(element);
+      
+      // Calculate position relative to image
+      const relativeX = rect.left - imageRect.left;
+      const relativeY = rect.top - imageRect.top;
+      
+      // Try to identify field by content or position
+      const fieldId = `captured_field_${index}`;
+      
+      capturedPositions[fieldId] = {
+        fieldId: fieldId,
+        absolutePosition: {
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height
+        },
+        relativeToImage: {
+          x: relativeX,
+          y: relativeY,
+          width: rect.width,
+          height: rect.height
+        },
+        computedStyle: {
+          transform: computedStyle.transform,
+          position: computedStyle.position,
+          width: computedStyle.width,
+          height: computedStyle.height
+        },
+        content: element.textContent?.substring(0, 50) || 'No text content'
+      };
+      
+      console.log(`📏 CAPTURED FIELD ${fieldId}:`, capturedPositions[fieldId]);
+    });
+    
+    // Compare with calculated positions
+    const calculatedPositions = getDisplayPositions();
+    console.log('📊 COMPARISON - Calculated vs Captured:');
+    console.log('Calculated positions:', calculatedPositions);
+    console.log('Captured positions:', capturedPositions);
+    
+    return { calculatedPositions, capturedPositions };
+  };
+
+  // Function to debug image container positioning
+  const debugImageContainerPositioning = () => {
+    if (!imageRef) return;
+    
+    const image = imageRef;
+    const imageContainer = image.parentElement;
+    const previewContainer = previewRef.current;
+    
+    // Get all relevant element positions
+    const imageRect = image.getBoundingClientRect();
+    const containerRect = imageContainer?.getBoundingClientRect();
+    const previewRect = previewContainer?.getBoundingClientRect();
+    
+    // Check scroll positions
+    const scrollArea = previewContainer?.closest('[data-radix-scroll-area-viewport]') as HTMLElement;
+    const scrollContainer = scrollArea?.parentElement;
+    
+    console.log('🖼️ IMAGE CONTAINER POSITIONING DEBUG:');
+    console.log('Image element:', {
+      offsetLeft: image.offsetLeft,
+      offsetTop: image.offsetTop,
+      offsetWidth: image.offsetWidth,
+      offsetHeight: image.offsetHeight,
+      getBoundingClientRect: imageRect,
+      computedStyle: {
+        position: window.getComputedStyle(image).position,
+        top: window.getComputedStyle(image).top,
+        left: window.getComputedStyle(image).left,
+        transform: window.getComputedStyle(image).transform
+      }
+    });
+    
+    console.log('Image container:', {
+      element: imageContainer,
+      offsetLeft: imageContainer?.offsetLeft,
+      offsetTop: imageContainer?.offsetTop,
+      offsetWidth: imageContainer?.offsetWidth,
+      offsetHeight: imageContainer?.offsetHeight,
+      getBoundingClientRect: containerRect,
+      computedStyle: imageContainer ? {
+        position: window.getComputedStyle(imageContainer).position,
+        top: window.getComputedStyle(imageContainer).top,
+        left: window.getComputedStyle(imageContainer).left,
+        transform: window.getComputedStyle(imageContainer).transform,
+        overflow: window.getComputedStyle(imageContainer).overflow
+      } : 'null'
+    });
+    
+    console.log('Preview container:', {
+      element: previewContainer,
+      offsetLeft: previewContainer?.offsetLeft,
+      offsetTop: previewContainer?.offsetTop,
+      offsetWidth: previewContainer?.offsetWidth,
+      offsetHeight: previewContainer?.offsetHeight,
+      getBoundingClientRect: previewRect,
+      computedStyle: previewContainer ? {
+        position: window.getComputedStyle(previewContainer).position,
+        top: window.getComputedStyle(previewContainer).top,
+        left: window.getComputedStyle(previewContainer).left,
+        transform: window.getComputedStyle(previewContainer).transform,
+        overflow: window.getComputedStyle(previewContainer).overflow
+      } : 'null'
+    });
+    
+    console.log('Scroll area:', {
+      element: scrollArea,
+      scrollTop: scrollArea?.scrollTop,
+      scrollLeft: scrollArea?.scrollLeft,
+      clientHeight: scrollArea?.clientHeight,
+      scrollHeight: scrollArea?.scrollHeight,
+      getBoundingClientRect: scrollArea?.getBoundingClientRect(),
+      computedStyle: scrollArea ? {
+        position: window.getComputedStyle(scrollArea).position,
+        overflow: window.getComputedStyle(scrollArea).overflow,
+        transform: window.getComputedStyle(scrollArea).transform
+      } : 'null'
+    });
+
+    // Debug TemplateRenderer dimensions
+    const templateRenderer = document.querySelector('.absolute.inset-0') as HTMLElement;
+    if (templateRenderer) {
+      console.log('TemplateRenderer dimensions:', {
+        offsetWidth: templateRenderer.offsetWidth,
+        offsetHeight: templateRenderer.offsetHeight,
+        getBoundingClientRect: templateRenderer.getBoundingClientRect(),
+        computedStyle: {
+          position: window.getComputedStyle(templateRenderer).position,
+          top: window.getComputedStyle(templateRenderer).top,
+          left: window.getComputedStyle(templateRenderer).left,
+          width: window.getComputedStyle(templateRenderer).width,
+          height: window.getComputedStyle(templateRenderer).height
+        }
+      });
+    } else {
+      console.log('TemplateRenderer not found');
+    }
+    
+    // Check if image is positioned outside viewport
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    
+    console.log('🌐 VIEWPORT ANALYSIS:', {
+      viewportDimensions: { width: viewportWidth, height: viewportHeight },
+      imagePosition: {
+        top: imageRect.top,
+        left: imageRect.left,
+        bottom: imageRect.bottom,
+        right: imageRect.right
+      },
+      isImageVisible: {
+        topVisible: imageRect.top >= 0,
+        leftVisible: imageRect.left >= 0,
+        bottomVisible: imageRect.bottom <= viewportHeight,
+        rightVisible: imageRect.right <= viewportWidth,
+        fullyVisible: imageRect.top >= 0 && imageRect.left >= 0 && 
+                     imageRect.bottom <= viewportHeight && imageRect.right <= viewportWidth
+      },
+      scrollOffset: {
+        scrollTop: scrollArea?.scrollTop || 0,
+        scrollLeft: scrollArea?.scrollLeft || 0
+      }
+    });
+    
+    // Check for positioning context issues
+    if (imageRect.top < 0) {
+      console.log('🚨 ISSUE DETECTED: Image is positioned above viewport!');
+      console.log('This explains why fields appear to "shift" - they are actually positioned correctly relative to the image, but the image itself is outside the visible area.');
+    }
+  };
+
+  // Call debug function when image loads
+  useEffect(() => {
+    if (imageLoaded && imageRef) {
+      debugContainerDimensions();
+    }
+  }, [imageLoaded, imageRef]);
+
 
   // Use the position editor hook with currentTemplate
   const {
@@ -205,6 +658,30 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
           return element.classList.contains('resize-handle') || 
                  element.classList.contains('resize-handles') ||
                  element.classList.contains('editing-ui');
+        },
+        onclone: (clonedDoc) => {
+          // Apply Y offset to text boxes in the cloned DOM for PDF generation
+          const textBoxes = clonedDoc.querySelectorAll('[style*="transform: translate"]');
+          textBoxes.forEach((textBox) => {
+            const element = textBox as HTMLElement;
+            const currentTransform = element.style.transform || '';
+            
+            // Extract current translate values
+            const translateMatch = currentTransform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+            if (translateMatch) {
+              const x = translateMatch[1];
+              const y = translateMatch[2];
+              
+              // Parse Y value and subtract 8px offset (move text boxes up)
+              const yValue = parseFloat(y);
+              const newY = yValue - 8;
+              
+              // Apply new transform with adjusted Y position
+              element.style.transform = `translate(${x}, ${newY}px)`;
+            }
+          });
+          
+          console.log('Applied -8px Y offset (moved up) to', textBoxes.length, 'text boxes for PDF generation');
         }
       });
       
@@ -328,8 +805,10 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
     }
 
     return (
-      <div className="bg-white shadow p-6">
-        <div className="mb-4 flex justify-between items-center">
+      <>
+        {/* Header container - separate from image container */}
+        <div className="bg-white shadow p-6 mb-4">
+          <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold">Template Preview</h3>
           {isAdmin && (
             <Button 
@@ -340,18 +819,21 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
               {isEditing ? "Done Editing" : "Edit Positions"}
             </Button>
           )}
+          </div>
         </div>
 
-        <div className="relative w-full" ref={previewRef}>
+        {/* Image container - clean, no padding interference */}
+        <div className="bg-white">
+          <div className="relative w-full h-auto" ref={previewRef}>
           <img
             ref={setImageRef}
             src={imageSource}
             alt="Template background"
-            className="rounded border border-gray-300"
+              className="rounded w-full h-auto max-h-full object-contain"
             onLoad={() => setImageLoaded(true)}
           />
           
-          {imageLoaded && (
+            {imageLoaded && imageRef && (
             <TemplateRenderer
               template={template}
               fields={fields}
@@ -361,21 +843,169 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
               getFieldValue={getFieldValue}
               onMouseDown={handleMouseDown}
               onResizeStart={handleResizeStart}
+              containerGlobalPosition={previewRef.current ? {
+                left: previewRef.current.offsetLeft,
+                top: previewRef.current.offsetTop
+              } : undefined}
             />
           )}
+
+        </div>
         </div>
         
+        {/* Debug button for testing */}
+        {isAdmin && (
+          <div className="bg-white p-6 pt-2">
+            <div className="flex gap-2 flex-wrap">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={debugImageContainerPositioning}
+              >
+                Debug Image Positioning
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={captureFieldPositionsFromWebpage}
+              >
+                Capture Field Positions
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  if (imageRef) {
+                    console.log('📏 IMAGE SCALING DEBUG:', {
+                      originalDimensions: {
+                        width: template.imageWidth,
+                        height: template.imageHeight
+                      },
+                      currentDimensions: {
+                        width: imageRef.offsetWidth,
+                        height: imageRef.offsetHeight
+                      },
+                      scalingRatio: {
+                        width: imageRef.offsetWidth / template.imageWidth,
+                        height: imageRef.offsetHeight / template.imageHeight
+                      }
+                    });
+                  }
+                }}
+              >
+                Check Image Scaling
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  console.log('🔍 PERCENTAGE VALUES:', currentTemplate.fieldPositions);
+                }}
+              >
+                Check Percentage Values
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  console.log('🔍 COMPREHENSIVE DEBUG - All field positioning info:');
+                  console.log('=== STEP 1: Image Scaling ===');
+                  if (imageRef) {
+                    console.log('Image Scaling:', {
+                      originalDimensions: { width: template.imageWidth, height: template.imageHeight },
+                      currentDimensions: { width: imageRef.offsetWidth, height: imageRef.offsetHeight },
+                      scalingRatio: {
+                        width: imageRef.offsetWidth / template.imageWidth,
+                        height: imageRef.offsetHeight / template.imageHeight
+                      }
+                    });
+                  }
+                  
+                  console.log('=== STEP 2: Percentage Values ===');
+                  console.log('Percentage Values:', currentTemplate.fieldPositions);
+                  
+                  console.log('=== STEP 3: Calculated Positions ===');
+                  const currentPositions = getDisplayPositions();
+                  console.log('Calculated Positions:', currentPositions);
+                  
+                  console.log('=== STEP 4: TemplateRenderer Props ===');
+                  console.log('Positions being passed to TemplateRenderer:', currentPositions);
+                  console.log('TemplateRenderer props check:', {
+                    hasPositions: !!currentPositions,
+                    positionCount: Object.keys(currentPositions).length,
+                    samplePosition: Object.values(currentPositions)[0]
+                  });
+                  
+                  console.log('=== STEP 5: Force Re-render ===');
+                  setImageLoaded(false);
+                  setTimeout(() => {
+                    setImageLoaded(true);
+                    console.log('Re-render triggered - check for FieldOverlay debug logs below');
+                  }, 100);
+                }}
+              >
+                Comprehensive Debug
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  console.log('🧹 CACHE BUSTING DEBUG:');
+                  // Force cache busting
+                  const timestamp = Date.now();
+                  console.log('Cache busting timestamp:', timestamp);
+                  
+                  // Force React to re-render everything
+                  setImageLoaded(false);
+                  setTimeout(() => {
+                    setImageLoaded(true);
+                    console.log('Cache busting re-render completed');
+                  }, 50);
+                }}
+              >
+                Cache Bust
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  console.log('🎨 CSS CONFLICT DEBUG:');
+                  // Check for CSS conflicts
+                  const fieldElements = document.querySelectorAll('[class*="absolute rounded"]');
+                  fieldElements.forEach((element, index) => {
+                    const computedStyle = window.getComputedStyle(element);
+                    console.log(`Field ${index} CSS:`, {
+                      position: computedStyle.position,
+                      transform: computedStyle.transform,
+                      left: computedStyle.left,
+                      top: computedStyle.top,
+                      width: computedStyle.width,
+                      height: computedStyle.height,
+                      zIndex: computedStyle.zIndex
+                    });
+                  });
+                }}
+              >
+                Check CSS Conflicts
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {/* Edit instructions - outside image container */}
         {isEditing && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-md">
+          <div className="bg-white p-6 pt-2">
+            <div className="p-3 bg-blue-50 rounded-md">
             <p className="text-sm text-blue-800">
               💡 <strong>Edit Mode:</strong> 
               <br/>• <strong>Drag boxes</strong> to move them over form fields
               <br/>• <strong>Drag corners/edges</strong> to resize boxes
               <br/>• Click "Done Editing" when finished
             </p>
+            </div>
           </div>
         )}
-      </div>
+      </>
     );
   };
 
@@ -389,12 +1019,10 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
       <CardHeader>
         <CardTitle className="text-xl">Preview</CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow">
-        <ScrollArea className="h-[50vh] sm:h-[60vh] md:h-[600px] rounded border">
-          <div ref={previewRef}>
+      <CardContent className="p-0">
+        <div>
             {renderTemplate()}
           </div>
-        </ScrollArea>
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row justify-between w-full items-start sm:items-center gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
@@ -421,12 +1049,12 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
         {isAdmin && (
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             {onSaveTemplate && (
-              <Button
+          <Button
                 onClick={() => onSaveTemplate()}
                 className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
-              >
-                Save Template
-              </Button>
+          >
+            Save Template
+          </Button>
             )}
             {onSaveAsTemplate && (
               <Button

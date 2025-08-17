@@ -57,11 +57,13 @@ const Index = () => {
   const handleSaveAsTemplate = async () => {
     if (selectedTemplate) {
       try {
-        // Create new template with current data
+        // Create new template with current data (exactly like Save Template)
         const newTemplate = {
           ...selectedTemplate,
           fields: formFields
         };
+        
+
         
         await saveTemplate(newTemplate);
         

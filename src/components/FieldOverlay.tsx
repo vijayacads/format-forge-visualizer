@@ -24,6 +24,22 @@ const FieldOverlay: React.FC<FieldOverlayProps> = ({
     ? `absolute rounded ${isEditing ? 'bg-yellow-100 bg-opacity-30 cursor-move' : ''}`
     : `absolute rounded ${isEditing ? 'bg-blue-100 bg-opacity-20 cursor-move' : ''}`;
 
+
+
+
+
+
+
+  // Debug position prop with more details
+  console.log(`🎯 FIELDOVERLAY ${field.id} DETAILED DEBUG:`, {
+    fieldId: field.id,
+    receivedPosition: position,
+    transformValue: `translate(${position.x}px, ${position.y}px)`,
+    width: `${position.width}px`,
+    height: `${position.height}px`,
+    timestamp: new Date().toISOString()
+  });
+
   return (
     <div 
       className={overlayClass}
@@ -31,13 +47,16 @@ const FieldOverlay: React.FC<FieldOverlayProps> = ({
         transform: `translate(${position.x}px, ${position.y}px)`,
         width: `${position.width}px`,
         minHeight: `${position.height}px`,
-        zIndex: 10
+        zIndex: 10,
+        position: 'absolute',
+        left: '0px',
+        top: '0px'
       }}
       onMouseDown={(e) => onMouseDown(e, field.id)}
     >
       {field.type === 'richtext' ? (
         <div 
-          className="text-gray-900 leading-tight text-sm editorjs-content"
+          className="text-gray-900 leading-tight text-sm quill-editor-content"
           style={{ 
             lineHeight: '1.2', 
             margin: 0, 
