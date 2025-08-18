@@ -637,10 +637,18 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
         description: "Creating your PDF document...",
       });
 
+      // DEBUG: Check previewRef
+      console.log('🔍 DEBUG: previewRef.current:', previewRef.current);
+      console.log('🔍 DEBUG: previewRef.current.innerHTML:', previewRef.current?.innerHTML?.substring(0, 500));
+      
       // Find the actual template content area (excluding UI elements)
-      const templateContent = previewRef.current.querySelector('.relative') as HTMLElement;
+      // previewRef.current IS the template content container
+      const templateContent = previewRef.current as HTMLElement;
+      console.log('🔍 DEBUG: templateContent found:', templateContent);
+      console.log('🔍 DEBUG: templateContent className:', templateContent?.className);
+      
       if (!templateContent) {
-        console.error('Template content not found in preview ref');
+        console.error('❌ Template content not found in preview ref');
         throw new Error('Template content not found');
       }
       

@@ -39,14 +39,29 @@ class SupabaseService {
   // Template Operations
   async getTemplates(): Promise<Template[]> {
     try {
-      const { data, error } = await supabase
-        .from('templates')
-        .select('*')
-        .order('created_at', { ascending: false })
+      // Check if user is admin
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user && user.email === 'vigyanshaala@gmail.com') {
+        // Admin sees all templates
+        const { data, error } = await supabase
+          .from('templates')
+          .select('*')
+          .order('created_at', { ascending: false })
 
-      if (error) throw error
+        if (error) throw error
+        return data ? data.map(item => this.mapSupabaseToTemplate(item)) : []
+      } else {
+        // Public users see only public templates
+        const { data, error } = await supabase
+          .from('templates')
+          .select('*')
+          .eq('is_public', true)
+          .order('created_at', { ascending: false })
 
-      return data ? data.map(item => this.mapSupabaseToTemplate(item)) : []
+        if (error) throw error
+        return data ? data.map(item => this.mapSupabaseToTemplate(item)) : []
+      }
     } catch (error) {
       console.error('Error fetching templates:', error)
       throw error
@@ -106,6 +121,12 @@ class SupabaseService {
 
   async createTemplate(template: Omit<Template, 'id'>): Promise<Template> {
     try {
+      // Check if user is admin
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.email !== 'vigyanshaala@gmail.com') {
+        throw new Error('Admin access required to create templates');
+      }
+
       // Database insert moved to beginning for testing
       const { data, error } = await supabase
         .from('templates')
@@ -134,6 +155,12 @@ class SupabaseService {
 
   async updateTemplate(id: string, updates: Partial<Template>): Promise<Template> {
     try {
+      // Check if user is admin
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.email !== 'vigyanshaala@gmail.com') {
+        throw new Error('Admin access required to update templates');
+      }
+
       const updateData: Record<string, unknown> = {}
       
       if (updates.name !== undefined) updateData.name = updates.name
@@ -279,6 +306,12 @@ class SupabaseService {
 
   async deleteTemplate(id: string): Promise<void> {
     try {
+      // Check if user is admin
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.email !== 'vigyanshaala@gmail.com') {
+        throw new Error('Admin access required to delete templates');
+      }
+
       const { error } = await supabase
         .from('templates')
         .delete()

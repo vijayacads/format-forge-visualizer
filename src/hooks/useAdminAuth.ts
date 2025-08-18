@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from '@/lib/supabase';
 
 // TODO: Move to environment variables in production
 const ADMIN_PASSWORD = 'Vigyan@Assignments123';
@@ -56,15 +57,39 @@ export const useAdminAuth = (): AdminAuthReturn => {
    * If valid, sets isAdmin to true and shows success toast.
    * If invalid, shows error toast and clears the password field.
    */
-  const handleAdminLogin = (): void => {
+  const handleAdminLogin = async (): Promise<void> => {
     if (adminPassword === ADMIN_PASSWORD) {
-      setIsAdmin(true);
-      setAdminPassword('');
-      toast({
-        title: "Admin Access Granted",
-        description: "You now have access to admin features.",
-        variant: "default"
-      });
+      try {
+        // Sign in to Supabase as admin
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: 'vigyanshaala@gmail.com',
+          password: 'Vigyan@Assignments123'
+        });
+        
+        if (data.user) {
+          setIsAdmin(true);
+          setAdminPassword('');
+          toast({
+            title: "Admin Access Granted",
+            description: "You now have access to admin features.",
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Access Denied",
+            description: "Failed to authenticate with database.",
+            variant: "destructive"
+          });
+          setAdminPassword('');
+        }
+      } catch (error) {
+        toast({
+          title: "Access Denied",
+          description: "Failed to authenticate with database.",
+          variant: "destructive"
+        });
+        setAdminPassword('');
+      }
     } else {
       toast({
         title: "Access Denied",
@@ -80,7 +105,8 @@ export const useAdminAuth = (): AdminAuthReturn => {
    * 
    * Sets isAdmin to false and shows logout confirmation toast.
    */
-  const handleAdminLogout = (): void => {
+  const handleAdminLogout = async (): Promise<void> => {
+    await supabase.auth.signOut();
     setIsAdmin(false);
     toast({
       title: "Logged Out",
