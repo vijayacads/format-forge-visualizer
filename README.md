@@ -84,6 +84,11 @@ npm install
 
 # Set up environment variables
 cp env.example .env
+# Edit .env file with your actual values:
+# VITE_ADMIN_EMAIL=your_admin_email
+# VITE_ADMIN_PASSWORD=your_admin_password
+# VITE_SUPABASE_URL=your_supabase_url
+# VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Start development server
 npm run dev

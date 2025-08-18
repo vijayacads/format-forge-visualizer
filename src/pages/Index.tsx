@@ -54,13 +54,14 @@ const Index = () => {
   };
 
   // Simple Save As - Create new template
-  const handleSaveAsTemplate = async () => {
+  const handleSaveAsTemplate = async (isPublic: boolean = false) => {
     if (selectedTemplate) {
       try {
         // Create new template with current data (exactly like Save Template)
         const newTemplate = {
           ...selectedTemplate,
-          fields: formFields
+          fields: formFields,
+          isPublic: isPublic
         };
         
 
@@ -78,13 +79,14 @@ const Index = () => {
   };
 
   // Simple Save - Update existing template
-  const handleSaveTemplate = async () => {
+  const handleSaveTemplate = async (isPublic: boolean = false) => {
     if (selectedTemplate) {
       try {
         // Update existing template with current data
         const updatedTemplate = {
           ...selectedTemplate,
-          fields: formFields
+          fields: formFields,
+          isPublic: isPublic
         };
         
         await updateTemplate(updatedTemplate);

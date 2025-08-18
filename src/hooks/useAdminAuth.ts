@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/lib/supabase';
 
-// TODO: Move to environment variables in production
-const ADMIN_PASSWORD = 'Vigyan@Assignments123';
+// Admin credentials from environment variables
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'vigyanshaala@gmail.com';
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'Vigyan@Assignments123';
 
 interface AdminAuthState {
   isAdmin: boolean;
@@ -62,8 +63,8 @@ export const useAdminAuth = (): AdminAuthReturn => {
       try {
         // Sign in to Supabase as admin
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: 'vigyanshaala@gmail.com',
-          password: 'Vigyan@Assignments123'
+          email: ADMIN_EMAIL,
+          password: ADMIN_PASSWORD
         });
         
         if (data.user) {

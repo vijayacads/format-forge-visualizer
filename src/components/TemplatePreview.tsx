@@ -13,12 +13,14 @@ import TemplateRenderer from './TemplateRenderer';
 import { getImageSource } from '@/utils/imageUtils';
 import { convertFieldPositionsToPixels, PercentagePosition } from '@/utils/positionUtils';
 import { supabaseService } from '@/services/supabaseService';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface TemplatePreviewProps {
   template: Template;
   fields: FormField[];
-  onSaveTemplate?: () => void;
-  onSaveAsTemplate?: () => void;
+  onSaveTemplate?: (isPublic: boolean) => void;
+  onSaveAsTemplate?: (isPublic: boolean) => void;
   isAdmin?: boolean;
   onTemplateUpdate?: (updatedTemplate: Template) => void;
 }
@@ -31,6 +33,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
   const [pdfMode, setPdfMode] = useState<'single-page' | 'multi-page'>('single-page');
   const [imageRef, setImageRef] = useState<HTMLImageElement | null>(null);
   const [currentTemplate, setCurrentTemplate] = useState<Template>(template);
+  const [isPublic, setIsPublic] = useState(false);
 
   // Force re-calculation when image size changes (viewport resize, mobile toggle, etc.)
   useEffect(() => {
@@ -52,6 +55,8 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
   // Sync currentTemplate with template prop changes
   useEffect(() => {
     setCurrentTemplate(template);
+    // Initialize isPublic state with template's current public status
+    setIsPublic(template.isPublic || false);
   }, [template]);
 
 
@@ -1053,12 +1058,25 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
             </select>
           </div>
         </div>
+        {/* Public/Private Toggle for Admin */}
+        {isAdmin && (
+          <div className="flex items-center space-x-2 mb-2">
+            <Switch
+              id="public-toggle"
+              checked={isPublic}
+              onCheckedChange={setIsPublic}
+            />
+            <Label htmlFor="public-toggle" className="text-sm">
+              Make template public
+            </Label>
+          </div>
+        )}
         {/* Save Template Buttons for Admin */}
         {isAdmin && (
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             {onSaveTemplate && (
           <Button
-                onClick={() => onSaveTemplate()}
+                onClick={() => onSaveTemplate(isPublic)}
                 className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
           >
             Save Template
@@ -1066,7 +1084,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
             )}
             {onSaveAsTemplate && (
               <Button
-                onClick={() => onSaveAsTemplate()}
+                onClick={() => onSaveAsTemplate(isPublic)}
                 className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
               >
                 Save As Template

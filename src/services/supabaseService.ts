@@ -2,6 +2,9 @@ import { supabase } from '@/lib/supabase';
 import { Template, FormField, FormData, FormSubmission } from '@/types';
 import { convertFieldPositionsToPercentages, convertFieldPositionsToPixels, PercentagePosition } from '@/utils/positionUtils';
 
+// Admin credentials from environment variables
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'vigyanshaala@gmail.com';
+
 export interface SupabaseTemplate {
   id: string
   name: string
@@ -42,7 +45,7 @@ class SupabaseService {
       // Check if user is admin
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (user && user.email === 'vigyanshaala@gmail.com') {
+      if (user && user.email === ADMIN_EMAIL) {
         // Admin sees all templates
         const { data, error } = await supabase
           .from('templates')
@@ -63,8 +66,9 @@ class SupabaseService {
         return data ? data.map(item => this.mapSupabaseToTemplate(item)) : []
       }
     } catch (error) {
-      console.error('Error fetching templates:', error)
-      throw error
+      // If getUser() fails (anonymous user), fall back to public templates
+      console.log('Anonymous user detected, showing public templates only');
+      return await this.getPublicTemplates();
     }
   }
 
@@ -123,7 +127,7 @@ class SupabaseService {
     try {
       // Check if user is admin
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.email !== 'vigyanshaala@gmail.com') {
+      if (!user || user.email !== ADMIN_EMAIL) {
         throw new Error('Admin access required to create templates');
       }
 
@@ -157,7 +161,7 @@ class SupabaseService {
     try {
       // Check if user is admin
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.email !== 'vigyanshaala@gmail.com') {
+      if (!user || user.email !== ADMIN_EMAIL) {
         throw new Error('Admin access required to update templates');
       }
 
@@ -308,7 +312,7 @@ class SupabaseService {
     try {
       // Check if user is admin
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.email !== 'vigyanshaala@gmail.com') {
+      if (!user || user.email !== ADMIN_EMAIL) {
         throw new Error('Admin access required to delete templates');
       }
 
