@@ -92,6 +92,15 @@ cp env.example .env
 
 # Start development server
 npm run dev
+
+## 🧪 Test Environment Setup
+
+For safe testing without affecting production data, see [TEST_ENVIRONMENT_SETUP.md](./TEST_ENVIRONMENT_SETUP.md)
+
+```bash
+# Set up test environment
+npm run dev:test
+```
 ```
 
 ## 🚀 Quick Start

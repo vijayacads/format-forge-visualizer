@@ -616,6 +616,13 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
       console.log('Fields:', fields);
       console.log('Preview ref:', previewRef.current);
       
+      // Show debug info on screen for mobile
+      toast({
+        title: "PDF Generation Started",
+        description: `Template: ${template.name}, Fields: ${Object.keys(fields).length}`,
+        variant: "default",
+      });
+      
       // Only save to database if NOT in admin mode and template has a valid UUID
       if (!isAdmin && !template.id.startsWith('custom-')) {
         // Save form data to database before generating PDF
@@ -645,7 +652,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
       // DEBUG: Check previewRef
       console.log('🔍 DEBUG: previewRef.current:', previewRef.current);
       console.log('🔍 DEBUG: previewRef.current.innerHTML:', previewRef.current?.innerHTML?.substring(0, 500));
-      
+
       // Find the actual template content area (excluding UI elements)
       // previewRef.current IS the template content container
       const templateContent = previewRef.current as HTMLElement;
@@ -787,7 +794,47 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
       const filename = `${template.name || 'document'}_${timestamp}.pdf`;
       
       console.log('Saving PDF as:', filename);
-      pdf.save(filename);
+      
+      // Mobile-friendly download method
+      try {
+        // Try the standard method first
+        pdf.save(filename);
+      } catch (downloadError) {
+        console.log('Standard download failed, trying alternative method:', downloadError);
+        
+        // Show error on screen for mobile debugging
+        toast({
+          title: "Download Error",
+          description: `Standard method failed: ${downloadError}`,
+          variant: "destructive",
+        });
+        
+        try {
+          // Alternative method for mobile browsers
+          const pdfBlob = pdf.output('blob');
+          const url = URL.createObjectURL(pdfBlob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          
+          toast({
+            title: "Alternative Download",
+            description: "Tried alternative download method",
+            variant: "default",
+          });
+        } catch (alternativeError) {
+          console.error('Alternative download also failed:', alternativeError);
+          toast({
+            title: "Download Failed",
+            description: `Both methods failed: ${alternativeError}`,
+            variant: "destructive",
+          });
+        }
+      }
       
       toast({
         title: "Download Complete",
