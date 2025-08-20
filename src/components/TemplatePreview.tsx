@@ -89,18 +89,14 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
                           firstPosition.height > 0 && firstPosition.height <= 100;
       
       if (isPercentage && template.imageWidth && template.imageHeight) {
-        // Get displayed image dimensions (what user actually sees)
-        const displayedImageWidth = imageRef?.offsetWidth || template.imageWidth;
-        const displayedImageHeight = imageRef?.offsetHeight || template.imageHeight;
-        
         // Debug percentage values
         console.log('🔍 PERCENTAGE VALUES:', positions);
         
-        // Convert percentages to pixels using DISPLAYED dimensions
+        // Convert percentages to pixels using ORIGINAL dimensions (to maintain compatibility)
         const pixelPositions = convertFieldPositionsToPixels(
           positions,
-          displayedImageWidth,    // Use displayed width instead of original
-          displayedImageHeight    // Use displayed height instead of original
+          template.imageWidth,    // Use original width for percentage conversion
+          template.imageHeight    // Use original height for percentage conversion
         );
         
         return pixelPositions;
