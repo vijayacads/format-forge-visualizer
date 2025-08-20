@@ -125,6 +125,12 @@ class SupabaseService {
 
   async createTemplate(template: Omit<Template, 'id'>): Promise<Template> {
     try {
+      // Debug logs - only visible in test environment
+      if (import.meta.env.MODE === 'test') {
+        console.log('🔍 CREATE TEMPLATE DEBUG - template:', template);
+        console.log('🔍 CREATE TEMPLATE DEBUG - fieldPositions:', template.fieldPositions);
+      }
+
       // Check if user is admin
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || user.email !== ADMIN_EMAIL) {
@@ -148,7 +154,16 @@ class SupabaseService {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        if (import.meta.env.MODE === 'test') {
+          console.log('🔍 CREATE TEMPLATE DEBUG - ERROR:', error);
+        }
+        throw error;
+      }
+
+      if (import.meta.env.MODE === 'test') {
+        console.log('🔍 CREATE TEMPLATE DEBUG - SUCCESS - created data:', data);
+      }
 
       return this.mapSupabaseToTemplate(data)
     } catch (error) {
@@ -159,6 +174,13 @@ class SupabaseService {
 
   async updateTemplate(id: string, updates: Partial<Template>): Promise<Template> {
     try {
+      // Debug logs - only visible in test environment
+      if (import.meta.env.MODE === 'test') {
+        console.log('🔍 UPDATE TEMPLATE DEBUG - id:', id);
+        console.log('🔍 UPDATE TEMPLATE DEBUG - updates:', updates);
+        console.log('🔍 UPDATE TEMPLATE DEBUG - fieldPositions:', updates.fieldPositions);
+      }
+
       // Check if user is admin
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || user.email !== ADMIN_EMAIL) {
@@ -171,6 +193,11 @@ class SupabaseService {
       if (updates.type !== undefined) updateData.type = updates.type
       if (updates.fields !== undefined) updateData.fields = updates.fields
       if (updates.fieldPositions !== undefined) {
+        // Debug logs - only visible in test environment
+        if (import.meta.env.MODE === 'test') {
+          console.log('🔍 FIELD POSITIONS DEBUG - raw fieldPositions:', updates.fieldPositions);
+        }
+
         // Check if positions are already percentages (from database)
         const firstPosition = Object.values(updates.fieldPositions)[0];
         const isAlreadyPercentage = firstPosition && 
@@ -179,9 +206,18 @@ class SupabaseService {
                                    firstPosition.width > 0 && firstPosition.width <= 100 && 
                                    firstPosition.height > 0 && firstPosition.height <= 100;
         
+        // Debug logs - only visible in test environment
+        if (import.meta.env.MODE === 'test') {
+          console.log('🔍 FIELD POSITIONS DEBUG - firstPosition:', firstPosition);
+          console.log('🔍 FIELD POSITIONS DEBUG - isAlreadyPercentage:', isAlreadyPercentage);
+        }
+        
         if (isAlreadyPercentage) {
           // Positions are already percentages, use them directly
           updateData.field_positions = updates.fieldPositions;
+          if (import.meta.env.MODE === 'test') {
+            console.log('🔍 FIELD POSITIONS DEBUG - using percentages directly');
+          }
         } else {
           // Positions are pixels, convert to percentages
           const imageWidth = updates.imageWidth;
@@ -190,9 +226,15 @@ class SupabaseService {
           if (imageWidth && imageHeight) {
             const percentagePositions = convertFieldPositionsToPercentages(updates.fieldPositions, imageWidth, imageHeight);
             updateData.field_positions = percentagePositions;
+            if (import.meta.env.MODE === 'test') {
+              console.log('🔍 FIELD POSITIONS DEBUG - converted to percentages:', percentagePositions);
+            }
           } else {
             // Fallback to original positions if no image dimensions
             updateData.field_positions = updates.fieldPositions;
+            if (import.meta.env.MODE === 'test') {
+              console.log('🔍 FIELD POSITIONS DEBUG - fallback to original positions');
+            }
           }
         }
       }
@@ -202,6 +244,12 @@ class SupabaseService {
       if (updates.imageHeight !== undefined) updateData.image_height = updates.imageHeight
       if (updates.isPublic !== undefined) updateData.is_public = updates.isPublic
 
+      // Debug logs - only visible in test environment
+      if (import.meta.env.MODE === 'test') {
+        console.log('🔍 DATABASE UPDATE DEBUG - updateData:', updateData);
+        console.log('🔍 DATABASE UPDATE DEBUG - field_positions being saved:', updateData.field_positions);
+      }
+
       const { data, error } = await supabase
         .from('templates')
         .update(updateData)
@@ -209,7 +257,16 @@ class SupabaseService {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        if (import.meta.env.MODE === 'test') {
+          console.log('🔍 DATABASE UPDATE DEBUG - ERROR:', error);
+        }
+        throw error;
+      }
+
+      if (import.meta.env.MODE === 'test') {
+        console.log('🔍 DATABASE UPDATE DEBUG - SUCCESS - returned data:', data);
+      }
 
       return this.mapSupabaseToTemplate(data)
     } catch (error) {
