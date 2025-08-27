@@ -190,9 +190,9 @@
 
 /* Mobile-specific styles */
 @media (max-width: 640px) {
-  /* Improve touch targets */
-  button, 
-  [role="button"] {
+  /* Improve touch targets - exclude ReactQuill toolbar buttons */
+  button:not(.ql-toolbar button), 
+  [role="button"]:not(.ql-toolbar [role="button"]) {
     min-height: 44px;
     min-width: 44px;
   }
@@ -277,6 +277,34 @@
 .ql-editor {
   line-height: 1.5;
 }
+
+/* Fix toolbar button sizes for mobile - override React Quill defaults */
+@media (max-width: 768px) {
+  .ql-toolbar button {
+    width: 24px !important;
+    height: 24px !important;
+    padding: 2px !important;
+    margin: 1px !important;
+    font-size: 12px !important;
+  }
+  
+  .ql-toolbar .ql-picker {
+    height: 24px !important;
+    margin: 1px !important;
+  }
+  
+  .ql-toolbar .ql-picker-label {
+    padding: 2px 4px !important;
+    font-size: 13px !important;
+    height: 24px !important;
+  }
+  
+  .ql-toolbar .ql-formats {
+    margin-right: 8px !important;
+  }
+}
+
+
 
 .ql-editor p {
   margin-bottom: 0.5rem;

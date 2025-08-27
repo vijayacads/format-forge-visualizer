@@ -17,21 +17,6 @@ const RichTextEditor = ({
   readOnly = false,
   height = '200px'
 }: RichTextEditorProps) => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Double the height for mobile devices
-  const mobileHeight = isMobile ? `calc(${height} * 2)` : height;
 
   const modules = {
     toolbar: [
@@ -66,67 +51,38 @@ const RichTextEditor = ({
           readOnly={readOnly}
           modules={modules}
           formats={formats}
-          style={{ height: mobileHeight }}
+          style={{ height }}
           className="rich-text-editor-quill"
         />
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @media (max-width: 768px) {
+              .rich-text-editor-quill .ql-toolbar button {
+                width: 20px !important;
+                height: 20px !important;
+                padding: 1px !important;
+                margin: 0.5px !important;
+                font-size: 10px !important;
+              }
+              
+              .rich-text-editor-quill .ql-toolbar .ql-picker {
+                height: 20px !important;
+                margin: 0.5px !important;
+              }
+              
+              .rich-text-editor-quill .ql-toolbar .ql-picker-label {
+                padding: 1px 2px !important;
+                font-size: 10px !important;
+                height: 20px !important;
+              }
+              
+              .rich-text-editor-quill .ql-toolbar .ql-formats {
+                margin-right: 4px !important;
+              }
+            }
+          `
+        }} />
       </div>
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          .rich-text-editor-quill .ql-toolbar {
-            position: sticky !important;
-            top: 0 !important;
-            background: white !important;
-            z-index: 10 !important;
-            border-bottom: 1px solid #e2e8f0 !important;
-            padding: ${isMobile ? '8px 12px' : '8px 15px'} !important;
-          }
-          .rich-text-editor-quill .ql-toolbar .ql-formats {
-            margin-right: ${isMobile ? '8px' : '15px'} !important;
-          }
-          .rich-text-editor-quill .ql-toolbar button {
-            width: ${isMobile ? '32px' : '28px'} !important;
-            height: ${isMobile ? '32px' : '28px'} !important;
-            margin: ${isMobile ? '2px' : '1px'} !important;
-            border-radius: 4px !important;
-          }
-          .rich-text-editor-quill .ql-toolbar .ql-picker {
-            height: ${isMobile ? '32px' : '28px'} !important;
-            margin: ${isMobile ? '2px' : '1px'} !important;
-          }
-          .rich-text-editor-quill .ql-toolbar .ql-picker-label {
-            padding: ${isMobile ? '4px 8px' : '3px 5px'} !important;
-            border-radius: 4px !important;
-          }
-          .rich-text-editor-quill .ql-container {
-            min-height: calc(${mobileHeight} - 42px) !important;
-            border: none !important;
-          }
-          .rich-text-editor-quill .ql-editor {
-            min-height: calc(${mobileHeight} - 42px) !important;
-            font-size: ${isMobile ? '16px' : '14px'} !important;
-            line-height: 1.6 !important;
-            text-align: left !important;
-            padding: ${isMobile ? '16px 20px' : '12px 15px'} !important;
-          }
-          .rich-text-editor-quill .ql-editor p {
-            text-align: left !important;
-            margin-bottom: 8px !important;
-          }
-          .rich-text-editor-quill .ql-editor ul, .rich-text-editor-quill .ql-editor ol {
-            text-align: left !important;
-            padding-left: 20px !important;
-          }
-          .rich-text-editor-quill .ql-editor li {
-            text-align: left !important;
-            margin-bottom: 4px !important;
-          }
-          .rich-text-editor-quill .ql-editor.ql-blank::before {
-            color: #94a3b8 !important;
-            font-style: italic !important;
-            font-size: ${isMobile ? '16px' : '14px'} !important;
-          }
-        `
-      }} />
     </div>
   );
 };
