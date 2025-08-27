@@ -179,9 +179,17 @@ const Index = () => {
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-brand-600">Assignment Template Maker</h1>
-              <p className="text-slate-600">Use this To Type Your Assignments, CVs and More.!</p>
+            <div className="flex items-center space-x-4">
+              {/* VigyanShaala Logo */}
+              <img 
+                src="/Logo2.jpg" 
+                alt="VigyanShaala" 
+                className="h-12 w-auto"
+              />
+              <div>
+                <h1 className="text-3xl font-bold text-blue-600">VigyanShaala's Assignment Template Maker</h1>
+                <p className="text-slate-600">Use this To Type Your Assignments, CVs and More!</p>
+              </div>
             </div>
             <AdminHeader 
               isAdmin={isAdmin}
