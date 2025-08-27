@@ -798,7 +798,7 @@ const TemplatePreview = ({ template, fields, onSaveTemplate, onSaveAsTemplate, i
       // Mobile-friendly download method
       try {
         // Try the standard method first
-        pdf.save(filename);
+      pdf.save(filename);
       } catch (downloadError) {
         console.log('Standard download failed, trying alternative method:', downloadError);
         

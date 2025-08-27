@@ -57,6 +57,11 @@ const Index = () => {
   const handleSaveAsTemplate = async (isPublic: boolean = false) => {
     if (selectedTemplate) {
       try {
+        // Debug logs - local only
+        console.log('🔍 SAVE AS DEBUG - selectedTemplate:', selectedTemplate);
+        console.log('🔍 SAVE AS DEBUG - fieldPositions:', selectedTemplate?.fieldPositions);
+        console.log('🔍 SAVE AS DEBUG - template ID:', selectedTemplate?.id);
+
         // Create new template with current data (exactly like Save Template)
         const newTemplate = {
           ...selectedTemplate,
@@ -64,6 +69,9 @@ const Index = () => {
           isPublic: isPublic
         };
         
+        // Debug logs - local only
+        console.log('🔍 SAVE AS DEBUG - newTemplate:', newTemplate);
+        console.log('🔍 SAVE AS DEBUG - fieldPositions being saved:', newTemplate.fieldPositions);
 
         
         await saveTemplate(newTemplate);
@@ -82,12 +90,21 @@ const Index = () => {
   const handleSaveTemplate = async (isPublic: boolean = false) => {
     if (selectedTemplate) {
       try {
+        // Debug logs - local only
+        console.log('🔍 SAVE DEBUG - selectedTemplate:', selectedTemplate);
+        console.log('🔍 SAVE DEBUG - fieldPositions:', selectedTemplate?.fieldPositions);
+        console.log('🔍 SAVE DEBUG - template ID:', selectedTemplate?.id);
+
         // Update existing template with current data
         const updatedTemplate = {
           ...selectedTemplate,
           fields: formFields,
           isPublic: isPublic
         };
+        
+        // Debug logs - local only
+        console.log('🔍 SAVE DEBUG - updatedTemplate:', updatedTemplate);
+        console.log('🔍 SAVE DEBUG - fieldPositions being saved:', updatedTemplate.fieldPositions);
         
         await updateTemplate(updatedTemplate);
         

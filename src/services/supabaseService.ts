@@ -125,6 +125,10 @@ class SupabaseService {
 
   async createTemplate(template: Omit<Template, 'id'>): Promise<Template> {
     try {
+      // Debug logs - local only
+      console.log('🔍 CREATE TEMPLATE DEBUG - template:', template);
+      console.log('🔍 CREATE TEMPLATE DEBUG - fieldPositions:', template.fieldPositions);
+
       // Check if user is admin
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || user.email !== ADMIN_EMAIL) {
@@ -148,7 +152,12 @@ class SupabaseService {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.log('🔍 CREATE TEMPLATE DEBUG - ERROR:', error);
+        throw error;
+      }
+
+      console.log('🔍 CREATE TEMPLATE DEBUG - SUCCESS - created data:', data);
 
       return this.mapSupabaseToTemplate(data)
     } catch (error) {
@@ -159,6 +168,11 @@ class SupabaseService {
 
   async updateTemplate(id: string, updates: Partial<Template>): Promise<Template> {
     try {
+      // Debug logs - local only
+      console.log('🔍 UPDATE TEMPLATE DEBUG - id:', id);
+      console.log('🔍 UPDATE TEMPLATE DEBUG - updates:', updates);
+      console.log('🔍 UPDATE TEMPLATE DEBUG - fieldPositions:', updates.fieldPositions);
+
       // Check if user is admin
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || user.email !== ADMIN_EMAIL) {
@@ -202,6 +216,10 @@ class SupabaseService {
       if (updates.imageHeight !== undefined) updateData.image_height = updates.imageHeight
       if (updates.isPublic !== undefined) updateData.is_public = updates.isPublic
 
+      // Debug logs - local only
+      console.log('🔍 DATABASE UPDATE DEBUG - updateData:', updateData);
+      console.log('🔍 DATABASE UPDATE DEBUG - field_positions being saved:', updateData.field_positions);
+
       const { data, error } = await supabase
         .from('templates')
         .update(updateData)
@@ -209,7 +227,12 @@ class SupabaseService {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.log('🔍 DATABASE UPDATE DEBUG - ERROR:', error);
+        throw error;
+      }
+
+      console.log('🔍 DATABASE UPDATE DEBUG - SUCCESS - returned data:', data);
 
       return this.mapSupabaseToTemplate(data)
     } catch (error) {
