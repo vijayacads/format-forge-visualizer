@@ -187,7 +187,7 @@ const Index = () => {
                 className="h-12 w-auto"
               />
               <div>
-                <h1 className="text-3xl font-bold text-blue-600">VigyanShaala's Assignment Template Maker</h1>
+                <h1 className="text-3xl font-bold" style={{color: '#2c4869'}}>VigyanShaala's Assignment Template Maker</h1>
                 <p className="text-slate-600">Use this To Type Your Assignments, CVs and More!</p>
               </div>
             </div>
